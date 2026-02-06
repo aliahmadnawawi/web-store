@@ -1,0 +1,25 @@
+.admin-locked .page-wrapper {
+  display: none;
+}
+#lockOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.5);
+  backdrop-filter: blur(4px);
+  display: none;
+  z-index: 50;
+}
+#lockOverlay.visible {
+  display: flex;
+}
+#lockOverlay .card {
+  max-width: 420px;
+}
+.pre-wrap {
+  white-space: pre-wrap;
+}
+.text-truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

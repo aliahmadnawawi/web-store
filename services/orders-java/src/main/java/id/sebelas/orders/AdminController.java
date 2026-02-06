@@ -65,7 +65,7 @@ public class AdminController {
         (log.getEntity() != null && log.getEntity().toLowerCase().contains(query))
       ))
       .limit(limit)
-      .map(log -> Map.of(
+      .map(log -> Map.<String, Object>of(
         "id", log.getId(),
         "actor", log.getActor(),
         "role", log.getRole(),
@@ -88,7 +88,7 @@ public class AdminController {
     String role = requireAdmin(key);
     List<Invoice> all = invoiceRepo.findAll(Sort.by(Sort.Direction.DESC, "createdAt"));
     audit(actor == null ? "admin" : actor, role, "LIST", "invoice", "", "limit=" + limit);
-    List<Map<String, Object>> data = all.stream().limit(limit).map(inv -> Map.of(
+    List<Map<String, Object>> data = all.stream().limit(limit).map(inv -> Map.<String, Object>of(
       "id", inv.getId(),
       "invoiceCode", inv.getInvoiceCode(),
       "token", inv.getToken(),

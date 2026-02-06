@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<rss version="2.0" xmlns:g="http://base.google.com/ns/1.0">
+  <channel>
+    <title>Sebelas Indonesia Product Feed</title>
+    <link>https://sebelasindonesia.app</link>
+    <description>Automated feed for Google Merchant Center</description>
+    <item>
+      <g:id>netflix-1</g:id>
+      <g:title>Netflix Premium 1 Bulan</g:title>
+      <g:description>Akun premium legal dengan auto-delivery.</g:description>
+      <g:link>https://sebelasindonesia.app/product/netflix-1-bulan</g:link>
+      <g:image_link>https://sebelasindonesia.app/images/netflix-premium.jpg</g:image_link>
+      <g:availability>in stock</g:availability>
+      <g:price>39000 IDR</g:price>
+      <g:brand>Sebelas Indonesia</g:brand>
+      <g:identifier_exists>false</g:identifier_exists>
+    </item>
+  </channel>
+</rss>

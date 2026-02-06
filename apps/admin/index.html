@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Sebelas Admin</title>
+    <link rel="stylesheet" href="https://unpkg.com/@tabler/core@1.0.0-beta20/dist/css/tabler.min.css" />
+  </head>
+  <body>
+    <div class="page">
+      <header class="navbar navbar-expand-md navbar-light d-print-none">
+        <div class="container-xl">
+          <a class="navbar-brand">Sebelas Admin</a>
+          <div class="navbar-nav flex-row order-md-last">
+            <div class="nav-item dropdown">
+              <a href="#" class="nav-link d-flex lh-1 text-reset p-0">
+                <span class="avatar avatar-sm">11</span>
+                <div class="d-none d-xl-block ps-2">
+                  <div>Owner</div>
+                  <div class="mt-1 small text-secondary">admin@sebelas.id</div>
+                </div>
+              </a>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <div class="page-wrapper">
+        <div class="container-xl">
+          <div class="page-header d-print-none">
+            <div class="row align-items-center">
+              <div class="col">
+                <h2 class="page-title">Dashboard</h2>
+                <div class="text-secondary">Ringkasan order & stok</div>
+              </div>
+              <div class="col-auto ms-auto">
+                <button class="btn btn-primary">Tambah Produk</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="row row-deck row-cards">
+            <div class="col-12 col-md-4">
+              <div class="card">
+                <div class="card-body">
+                  <div class="subheader">Total Orders</div>
+                  <div class="h1">12,340</div>
+                </div>
+              </div>
+            </div>
+            <div class="col-12 col-md-4">
+              <div class="card">
+                <div class="card-body">
+                  <div class="subheader">Revenue</div>
+                  <div class="h1">Rp 2.1B</div>
+                </div>
+              </div>
+            </div>
+            <div class="col-12 col-md-4">
+              <div class="card">
+                <div class="card-body">
+                  <div class="subheader">Low Stock</div>
+                  <div class="h1">14 SKU</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="row mt-3">
+            <div class="col-12">
+              <div class="card">
+                <div class="card-header">
+                  <h3 class="card-title">Recent Orders</h3>
+                </div>
+                <div class="table-responsive">
+                  <table class="table table-vcenter card-table">
+                    <thead>
+                      <tr>
+                        <th>Invoice</th>
+                        <th>Buyer</th>
+                        <th>Status</th>
+                        <th>Amount</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td>INV-2026-0001</td>
+                        <td>Guest (WA)</td>
+                        <td><span class="badge bg-green">Paid</span></td>
+                        <td>Rp 39.000</td>
+                      </tr>
+                      <tr>
+                        <td>INV-2026-0002</td>
+                        <td>Member</td>
+                        <td><span class="badge bg-yellow">Pending</span></td>
+                        <td>Rp 22.500</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

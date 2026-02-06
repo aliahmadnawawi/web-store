@@ -1,0 +1,16 @@
+{
+  "expo": {
+    "name": "Sebelas Indonesia",
+    "slug": "sebelas-indonesia",
+    "scheme": "sebelas",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0E47A1"
+    }
+  }
+}

@@ -1,0 +1,5 @@
+<svg width="256" height="256" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="256" height="256" rx="64" fill="#038383"/>
+  <path d="M64 160L96 96H128L160 160H136L128 142H96L88 160H64Z" fill="#FFFFFF"/>
+  <text x="60" y="210" font-family="Poppins, Arial, sans-serif" font-size="28" fill="#FFFFFF" font-weight="700">SEBELAS</text>
+</svg>

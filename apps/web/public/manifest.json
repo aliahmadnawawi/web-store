@@ -1,0 +1,16 @@
+{
+  "name": "Sebelas Indonesia",
+  "short_name": "Sebelas",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#038383",
+  "theme_color": "#038383",
+  "icons": [
+    {
+      "src": "/logo.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any"
+    }
+  ]
+}

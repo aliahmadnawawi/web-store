@@ -1,0 +1,29 @@
+# Node
+node_modules/
+.next/
+out/
+*.log
+
+# React Native / Expo
+.expo/
+.expo-shared/
+
+# Java
+/target/
+*.class
+*.jar
+*.war
+*.ear
+
+# Go
+/bin/
+*.exe
+*.test
+
+# Python
+__pycache__/
+.venv/
+*.pyc
+
+# OS
+.DS_Store

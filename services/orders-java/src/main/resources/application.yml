@@ -1,0 +1,23 @@
+server:
+  port: 8082
+
+spring:
+  config:
+    import: optional:file:.env
+  datasource:
+    url: jdbc:postgresql://localhost:5432/sebelas_orders
+    username: sebelas
+    password: sebelas
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        format_sql: true
+
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+# API endpoints and secrets are read from environment variables via @Value defaults in code.

@@ -5,6 +5,7 @@ import (
   "database/sql"
   "encoding/xml"
   "encoding/json"
+  "io"
   "net/http"
   "net/url"
   "os"
@@ -895,5 +896,5 @@ func proxyTripay(c *gin.Context, baseURL string, apiKey string, path string) {
 
   c.Status(resp.StatusCode)
   c.Header("Content-Type", "application/json")
-  _, _ = c.Writer.ReadFrom(resp.Body)
+  _, _ = io.Copy(c.Writer, resp.Body)
 }

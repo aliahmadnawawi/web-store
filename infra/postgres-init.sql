@@ -52,3 +52,14 @@ CREATE TABLE IF NOT EXISTS wishlists (
   created_at TIMESTAMP DEFAULT NOW(),
   FOREIGN KEY (user_id) REFERENCES users(id)
 );
+
+CREATE TABLE IF NOT EXISTS audit_logs (
+  id UUID PRIMARY KEY,
+  actor VARCHAR(120) NOT NULL,
+  role VARCHAR(40) NOT NULL,
+  action VARCHAR(80) NOT NULL,
+  entity VARCHAR(80) NOT NULL,
+  entity_id VARCHAR(120),
+  meta TEXT,
+  created_at TIMESTAMP DEFAULT NOW()
+);

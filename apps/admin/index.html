@@ -5,8 +5,56 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Sebelas Admin</title>
     <link rel="stylesheet" href="https://unpkg.com/@tabler/core@1.0.0-beta20/dist/css/tabler.min.css" />
+    <style>
+      .admin-locked .page-wrapper {
+        display: none;
+      }
+      #lockOverlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.5);
+        backdrop-filter: blur(4px);
+        display: none;
+        z-index: 50;
+      }
+      #lockOverlay .card {
+        max-width: 420px;
+      }
+    </style>
   </head>
   <body>
+    <div id="lockOverlay" class="d-flex align-items-center justify-content-center">
+      <div class="card w-100" style="max-width: 480px;">
+        <div class="card-body">
+          <h3 class="card-title">Login Admin</h3>
+          <p class="text-secondary">Masukkan API URL, username, dan password.</p>
+          <div class="row g-3">
+            <div class="col-12">
+              <label class="form-label">Admin API URL</label>
+              <input id="loginApiUrl" class="form-control" placeholder="http://localhost:8081" />
+            </div>
+            <div class="col-12">
+              <label class="form-label">Orders API URL</label>
+              <input id="loginOrdersApiUrl" class="form-control" placeholder="http://localhost:8082" />
+            </div>
+            <div class="col-12">
+              <label class="form-label">Username</label>
+              <input id="loginUsername" class="form-control" placeholder="admin" />
+            </div>
+            <div class="col-12">
+              <label class="form-label">Password</label>
+              <input id="loginPassword" type="password" class="form-control" placeholder="••••••••" />
+            </div>
+            <div class="col-12">
+              <button id="loginSubmit" class="btn btn-primary w-100">Login</button>
+            </div>
+            <div class="col-12">
+              <div id="loginError" class="text-danger small d-none">Login gagal. Periksa API URL dan key.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
     <div class="page">
       <header class="navbar navbar-expand-md navbar-light d-print-none">
         <div class="container-xl">
@@ -16,8 +64,10 @@
               <a href="#" class="nav-link d-flex lh-1 text-reset p-0">
                 <span class="avatar avatar-sm">11</span>
                 <div class="d-none d-xl-block ps-2">
-                  <div>Owner</div>
-                  <div class="mt-1 small text-secondary">admin@sebelas.id</div>
+                  <div id="adminUserName">Owner</div>
+                  <div class="mt-1 small text-secondary">
+                    <span id="adminRoleBadge" class="badge bg-blue-lt">editor</span>
+                  </div>
                 </div>
               </a>
             </div>
@@ -31,36 +81,33 @@
             <div class="row align-items-center">
               <div class="col">
                 <h2 class="page-title">Dashboard</h2>
-                <div class="text-secondary">Ringkasan order & stok</div>
-              </div>
-              <div class="col-auto ms-auto">
-                <button class="btn btn-primary">Tambah Produk</button>
+                <div class="text-secondary">Kelola katalog, stok, dan PPOB</div>
               </div>
             </div>
           </div>
 
           <div class="row row-deck row-cards">
-            <div class="col-12 col-md-4">
+            <div class="col-12">
               <div class="card">
                 <div class="card-body">
-                  <div class="subheader">Total Orders</div>
-                  <div class="h1">12,340</div>
-                </div>
-              </div>
-            </div>
-            <div class="col-12 col-md-4">
-              <div class="card">
-                <div class="card-body">
-                  <div class="subheader">Revenue</div>
-                  <div class="h1">Rp 2.1B</div>
-                </div>
-              </div>
-            </div>
-            <div class="col-12 col-md-4">
-              <div class="card">
-                <div class="card-body">
-                  <div class="subheader">Low Stock</div>
-                  <div class="h1">14 SKU</div>
+                  <h3 class="card-title">Koneksi Admin API</h3>
+                  <div class="row g-3 align-items-end">
+                    <div class="col-12 col-md-5">
+                      <label class="form-label">Admin API URL</label>
+                      <input id="apiUrl" class="form-control" placeholder="http://localhost:8081" />
+                    </div>
+                    <div class="col-12 col-md-5">
+                      <label class="form-label">Admin Key</label>
+                      <input id="adminKey" type="password" class="form-control" placeholder="••••••••" />
+                    </div>
+                    <div class="col-12 col-md-2">
+                      <button id="saveConfig" class="btn btn-primary w-100">Login</button>
+                    </div>
+                  </div>
+                  <div class="mt-3">
+                    <span id="connectionStatus" class="badge bg-secondary">Belum login</span>
+                    <button id="logout" class="btn btn-sm btn-outline-danger ms-2">Logout</button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -68,35 +115,460 @@
 
           <div class="row mt-3">
             <div class="col-12">
-              <div class="card">
-                <div class="card-header">
-                  <h3 class="card-title">Recent Orders</h3>
+              <ul class="nav nav-tabs" data-bs-toggle="tabs">
+                <li class="nav-item">
+                  <a href="#tab-dashboard" class="nav-link active" data-bs-toggle="tab">Dashboard</a>
+                </li>
+                <li class="nav-item">
+                  <a href="#tab-products" class="nav-link" data-bs-toggle="tab">Produk</a>
+                </li>
+                <li class="nav-item">
+                  <a href="#tab-categories" class="nav-link" data-bs-toggle="tab">Kategori</a>
+                </li>
+                <li class="nav-item">
+                  <a href="#tab-stocks" class="nav-link" data-bs-toggle="tab">Stok</a>
+                </li>
+                <li class="nav-item">
+                  <a href="#tab-orders" class="nav-link" data-bs-toggle="tab">Orders</a>
+                </li>
+                <li class="nav-item">
+                  <a href="#tab-audit" class="nav-link" data-bs-toggle="tab">Audit Log</a>
+                </li>
+                <li class="nav-item">
+                  <a href="#tab-users" class="nav-link" data-bs-toggle="tab">Admin Users</a>
+                </li>
+              </ul>
+              <div class="tab-content">
+                <div class="tab-pane active show pt-4" id="tab-dashboard">
+                  <div class="row row-deck row-cards">
+                    <div class="col-12 col-md-4">
+                      <div class="card">
+                        <div class="card-body">
+                          <div class="subheader">Total Produk</div>
+                          <div class="h1" id="metricProducts">0</div>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="col-12 col-md-4">
+                      <div class="card">
+                        <div class="card-body">
+                          <div class="subheader">Total Kategori</div>
+                          <div class="h1" id="metricCategories">0</div>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="col-12 col-md-4">
+                      <div class="card">
+                        <div class="card-body">
+                          <div class="subheader">Stok Tersedia</div>
+                          <div class="h1" id="metricStocks">0</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="row mt-3">
+                    <div class="col-12">
+                      <div class="card">
+                        <div class="card-header">
+                          <h3 class="card-title">Low Stock</h3>
+                        </div>
+                        <div class="table-responsive">
+                          <table class="table table-vcenter card-table">
+                            <thead>
+                              <tr>
+                                <th>Product ID</th>
+                                <th>Available</th>
+                              </tr>
+                            </thead>
+                            <tbody id="lowStockBody"></tbody>
+                          </table>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <div class="table-responsive">
-                  <table class="table table-vcenter card-table">
-                    <thead>
-                      <tr>
-                        <th>Invoice</th>
-                        <th>Buyer</th>
-                        <th>Status</th>
-                        <th>Amount</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr>
-                        <td>INV-2026-0001</td>
-                        <td>Guest (WA)</td>
-                        <td><span class="badge bg-green">Paid</span></td>
-                        <td>Rp 39.000</td>
-                      </tr>
-                      <tr>
-                        <td>INV-2026-0002</td>
-                        <td>Member</td>
-                        <td><span class="badge bg-yellow">Pending</span></td>
-                        <td>Rp 22.500</td>
-                      </tr>
-                    </tbody>
-                  </table>
+
+                <div class="tab-pane pt-4" id="tab-products">
+                  <div class="card mb-3" id="addProductCard">
+                    <div class="card-body">
+                      <h3 class="card-title">Tambah Produk</h3>
+                      <div class="row g-3">
+                        <div class="col-12 col-md-2">
+                          <input id="prodCategoryId" class="form-control" placeholder="Category ID" />
+                        </div>
+                        <div class="col-12 col-md-3">
+                          <input id="prodName" class="form-control" placeholder="Nama Produk" />
+                        </div>
+                        <div class="col-12 col-md-2">
+                          <input id="prodSlug" class="form-control" placeholder="Slug" />
+                        </div>
+                        <div class="col-12 col-md-2">
+                          <input id="prodPrice" class="form-control" placeholder="Price" />
+                        </div>
+                        <div class="col-12 col-md-2">
+                          <input id="prodStatus" class="form-control" placeholder="Status (ACTIVE)" />
+                        </div>
+                        <div class="col-12">
+                          <input id="prodDesc" class="form-control" placeholder="Deskripsi" />
+                        </div>
+                        <div class="col-12 col-md-4">
+                          <input id="prodImage" class="form-control" placeholder="Image URL" />
+                        </div>
+                        <div class="col-12 col-md-2">
+                          <input id="prodType" class="form-control" placeholder="Type (ACCOUNT)" />
+                        </div>
+                        <div class="col-12 col-md-2">
+                          <button id="addProduct" class="btn btn-primary w-100">Tambah</button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="card mb-3 d-none" id="editProductCard">
+                    <div class="card-body">
+                      <h3 class="card-title">Edit Produk</h3>
+                      <div class="row g-3">
+                        <input type="hidden" id="editProdId" />
+                        <div class="col-12 col-md-2">
+                          <input id="editProdCategoryId" class="form-control" placeholder="Category ID" />
+                        </div>
+                        <div class="col-12 col-md-3">
+                          <input id="editProdName" class="form-control" placeholder="Nama Produk" />
+                        </div>
+                        <div class="col-12 col-md-2">
+                          <input id="editProdSlug" class="form-control" placeholder="Slug" />
+                        </div>
+                        <div class="col-12 col-md-2">
+                          <input id="editProdPrice" class="form-control" placeholder="Price" />
+                        </div>
+                        <div class="col-12 col-md-2">
+                          <input id="editProdStatus" class="form-control" placeholder="Status" />
+                        </div>
+                        <div class="col-12">
+                          <input id="editProdDesc" class="form-control" placeholder="Deskripsi" />
+                        </div>
+                        <div class="col-12 col-md-4">
+                          <input id="editProdImage" class="form-control" placeholder="Image URL" />
+                        </div>
+                        <div class="col-12 col-md-2">
+                          <input id="editProdType" class="form-control" placeholder="Type" />
+                        </div>
+                        <div class="col-12 col-md-2">
+                          <button id="saveProduct" class="btn btn-primary w-100">Simpan</button>
+                        </div>
+                        <div class="col-12 col-md-2">
+                          <button id="cancelEditProduct" class="btn btn-outline-secondary w-100">Batal</button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="card">
+                    <div class="card-header">
+                      <h3 class="card-title">Daftar Produk</h3>
+                      <div class="ms-auto d-flex gap-2 align-items-center">
+                        <input id="productSearch" class="form-control form-control-sm" placeholder="Search" />
+                        <button id="prevProducts" class="btn btn-sm btn-outline-primary">Prev</button>
+                        <span id="pageProducts" class="text-muted small">1</span>
+                        <button id="nextProducts" class="btn btn-sm btn-outline-primary">Next</button>
+                        <button id="refreshProducts" class="btn btn-sm btn-outline-primary">Refresh</button>
+                        <button id="bulkDeleteProducts" class="btn btn-sm btn-outline-danger">Hapus Terpilih</button>
+                      </div>
+                    </div>
+                    <div class="table-responsive">
+                      <table class="table table-vcenter card-table">
+                        <thead>
+                          <tr>
+                            <th><input type="checkbox" id="selectAllProducts" /></th>
+                            <th>ID</th>
+                            <th>Nama</th>
+                            <th>Slug</th>
+                            <th>Price</th>
+                            <th>Status</th>
+                            <th></th>
+                          </tr>
+                        </thead>
+                        <tbody id="productsBody"></tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="tab-pane pt-4" id="tab-categories">
+                  <div class="card mb-3" id="addCategoryCard">
+                    <div class="card-body">
+                      <h3 class="card-title">Tambah Kategori</h3>
+                      <div class="row g-3">
+                        <div class="col-12 col-md-3">
+                          <input id="catName" class="form-control" placeholder="Nama Kategori" />
+                        </div>
+                        <div class="col-12 col-md-3">
+                          <input id="catSlug" class="form-control" placeholder="Slug" />
+                        </div>
+                        <div class="col-12 col-md-3">
+                          <input id="catIcon" class="form-control" placeholder="Icon URL" />
+                        </div>
+                        <div class="col-12 col-md-3">
+                          <button id="addCategory" class="btn btn-primary w-100">Tambah</button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="card mb-3 d-none" id="editCategoryCard">
+                    <div class="card-body">
+                      <h3 class="card-title">Edit Kategori</h3>
+                      <div class="row g-3">
+                        <input type="hidden" id="editCatId" />
+                        <div class="col-12 col-md-3">
+                          <input id="editCatName" class="form-control" placeholder="Nama Kategori" />
+                        </div>
+                        <div class="col-12 col-md-3">
+                          <input id="editCatSlug" class="form-control" placeholder="Slug" />
+                        </div>
+                        <div class="col-12 col-md-3">
+                          <input id="editCatIcon" class="form-control" placeholder="Icon URL" />
+                        </div>
+                        <div class="col-12 col-md-3 d-flex gap-2">
+                          <button id="saveCategory" class="btn btn-primary w-100">Simpan</button>
+                          <button id="cancelEditCategory" class="btn btn-outline-secondary w-100">Batal</button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="card">
+                    <div class="card-header">
+                      <h3 class="card-title">Daftar Kategori</h3>
+                      <div class="ms-auto d-flex gap-2 align-items-center">
+                        <input id="categorySearch" class="form-control form-control-sm" placeholder="Search" />
+                        <button id="prevCategories" class="btn btn-sm btn-outline-primary">Prev</button>
+                        <span id="pageCategories" class="text-muted small">1</span>
+                        <button id="nextCategories" class="btn btn-sm btn-outline-primary">Next</button>
+                        <button id="refreshCategories" class="btn btn-sm btn-outline-primary">Refresh</button>
+                      </div>
+                    </div>
+                    <div class="table-responsive">
+                      <table class="table table-vcenter card-table">
+                        <thead>
+                          <tr>
+                            <th>ID</th>
+                            <th>Nama</th>
+                            <th>Slug</th>
+                            <th>Icon</th>
+                            <th></th>
+                          </tr>
+                        </thead>
+                        <tbody id="categoriesBody"></tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="tab-pane pt-4" id="tab-stocks">
+                  <div class="card mb-3" id="importStockCard">
+                    <div class="card-body">
+                      <h3 class="card-title">Import Stok</h3>
+                      <div class="row g-3">
+                        <div class="col-12 col-md-3">
+                          <input id="stockProductId" class="form-control" placeholder="Product ID" />
+                        </div>
+                        <div class="col-12 col-md-9">
+                          <textarea id="stockPayloads" class="form-control" rows="4" placeholder="Satu kode per baris"></textarea>
+                        </div>
+                        <div class="col-12 col-md-3">
+                          <button id="importStock" class="btn btn-primary w-100">Import</button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="card mb-3 d-none" id="editStockCard">
+                    <div class="card-body">
+                      <h3 class="card-title">Edit Stok</h3>
+                      <div class="row g-3">
+                        <input type="hidden" id="editStockId" />
+                        <div class="col-12 col-md-3">
+                          <input id="editStockStatus" class="form-control" placeholder="Status (AVAILABLE/SOLD)" />
+                        </div>
+                        <div class="col-12 col-md-3">
+                          <input id="editStockInvoiceId" class="form-control" placeholder="Invoice ID" />
+                        </div>
+                        <div class="col-12">
+                          <textarea id="editStockPayload" class="form-control" rows="3" placeholder="Payload"></textarea>
+                        </div>
+                        <div class="col-12 col-md-2">
+                          <button id="saveStock" class="btn btn-primary w-100">Simpan</button>
+                        </div>
+                        <div class="col-12 col-md-2">
+                          <button id="cancelEditStock" class="btn btn-outline-secondary w-100">Batal</button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="card">
+                    <div class="card-header">
+                      <h3 class="card-title">Daftar Stok</h3>
+                      <div class="ms-auto d-flex gap-2">
+                        <input id="stockFilterProductId" class="form-control form-control-sm" placeholder="Product ID" />
+                        <input id="stockSearch" class="form-control form-control-sm" placeholder="Search" />
+                        <button id="prevStocks" class="btn btn-sm btn-outline-primary">Prev</button>
+                        <span id="pageStocks" class="text-muted small">1</span>
+                        <button id="nextStocks" class="btn btn-sm btn-outline-primary">Next</button>
+                        <button id="refreshStocks" class="btn btn-sm btn-outline-primary">Refresh</button>
+                        <button id="exportStocks" class="btn btn-sm btn-outline-primary">Export CSV</button>
+                      </div>
+                    </div>
+                    <div class="table-responsive">
+                      <table class="table table-vcenter card-table">
+                        <thead>
+                          <tr>
+                            <th>ID</th>
+                            <th>Product ID</th>
+                            <th>Status</th>
+                            <th>Invoice</th>
+                            <th>Payload</th>
+                            <th></th>
+                          </tr>
+                        </thead>
+                        <tbody id="stocksBody"></tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="tab-pane pt-4" id="tab-orders">
+                  <div class="card mb-3">
+                    <div class="card-body">
+                      <h3 class="card-title">Orders API</h3>
+                      <div class="row g-3 align-items-end">
+                        <div class="col-12 col-md-6">
+                          <label class="form-label">Orders API URL</label>
+                          <input id="ordersApiUrl" class="form-control" placeholder="http://localhost:8082" />
+                        </div>
+                        <div class="col-12 col-md-3">
+                          <label class="form-label">Limit</label>
+                          <input id="ordersLimit" class="form-control" value="100" />
+                        </div>
+                        <div class="col-12 col-md-3">
+                          <button id="refreshOrders" class="btn btn-primary w-100">Refresh</button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="card">
+                    <div class="card-header">
+                      <h3 class="card-title">Daftar Orders</h3>
+                      <div class="ms-auto d-flex gap-2">
+                        <button id="exportOrders" class="btn btn-sm btn-outline-primary">Export CSV</button>
+                      </div>
+                    </div>
+                    <div class="table-responsive">
+                      <table class="table table-vcenter card-table">
+                        <thead>
+                          <tr>
+                            <th>Invoice</th>
+                            <th>Status</th>
+                            <th>Amount</th>
+                            <th>Contact</th>
+                            <th>Product ID</th>
+                            <th>Created</th>
+                          </tr>
+                        </thead>
+                        <tbody id="ordersBody"></tbody>
+                      </table>
+                    </div>
+                  </div>
+                  <div class="card mt-3">
+                    <div class="card-header">
+                      <h3 class="card-title">Detail Delivery</h3>
+                    </div>
+                    <div class="card-body">
+                      <pre id="deliveryDetail" class="mb-0 text-muted">Klik invoice untuk lihat delivery payload.</pre>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="tab-pane pt-4" id="tab-audit">
+                  <div class="card">
+                    <div class="card-header">
+                      <h3 class="card-title">Audit Log</h3>
+                      <div class="ms-auto d-flex gap-2 align-items-center">
+                        <select id="auditSource" class="form-select form-select-sm">
+                          <option value="catalog">Catalog</option>
+                          <option value="orders">Orders</option>
+                        </select>
+                        <input id="auditSearch" class="form-control form-control-sm" placeholder="Search" />
+                        <button id="prevAudit" class="btn btn-sm btn-outline-primary">Prev</button>
+                        <span id="pageAudit" class="text-muted small">1</span>
+                        <button id="nextAudit" class="btn btn-sm btn-outline-primary">Next</button>
+                        <button id="refreshAudit" class="btn btn-sm btn-outline-primary">Refresh</button>
+                      </div>
+                    </div>
+                    <div class="table-responsive">
+                      <table class="table table-vcenter card-table">
+                        <thead>
+                          <tr>
+                            <th>ID</th>
+                            <th>Actor</th>
+                            <th>Role</th>
+                            <th>Action</th>
+                            <th>Entity</th>
+                            <th>Entity ID</th>
+                            <th>Meta</th>
+                            <th>Created</th>
+                          </tr>
+                        </thead>
+                        <tbody id="auditBody"></tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="tab-pane pt-4" id="tab-users">
+                  <div class="card mb-3" id="addUserCard">
+                    <div class="card-body">
+                      <h3 class="card-title">Tambah Admin User</h3>
+                      <div class="row g-3">
+                        <div class="col-12 col-md-3">
+                          <input id="userUsername" class="form-control" placeholder="Username" />
+                        </div>
+                        <div class="col-12 col-md-3">
+                          <input id="userPassword" class="form-control" placeholder="Password" />
+                        </div>
+                        <div class="col-12 col-md-2">
+                          <select id="userRole" class="form-select">
+                            <option value="editor">editor</option>
+                            <option value="viewer">viewer</option>
+                          </select>
+                        </div>
+                        <div class="col-12 col-md-2">
+                          <button id="addUser" class="btn btn-primary w-100">Tambah</button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="card">
+                    <div class="card-header">
+                      <h3 class="card-title">Daftar Admin Users</h3>
+                      <div class="ms-auto d-flex gap-2 align-items-center">
+                        <input id="userSearch" class="form-control form-control-sm" placeholder="Search" />
+                        <button id="prevUsers" class="btn btn-sm btn-outline-primary">Prev</button>
+                        <span id="pageUsers" class="text-muted small">1</span>
+                        <button id="nextUsers" class="btn btn-sm btn-outline-primary">Next</button>
+                        <button id="refreshUsers" class="btn btn-sm btn-outline-primary">Refresh</button>
+                      </div>
+                    </div>
+                    <div class="table-responsive">
+                      <table class="table table-vcenter card-table">
+                        <thead>
+                          <tr>
+                            <th>ID</th>
+                            <th>Username</th>
+                            <th>Role</th>
+                            <th>Created</th>
+                            <th></th>
+                          </tr>
+                        </thead>
+                        <tbody id="usersBody"></tbody>
+                      </table>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -104,5 +576,724 @@
         </div>
       </div>
     </div>
+    <script>
+      const state = {
+        apiUrl: localStorage.getItem("adminApiUrl") || "http://localhost:8081",
+        adminKey: localStorage.getItem("adminKey") || "",
+        ordersApiUrl: localStorage.getItem("ordersApiUrl") || "http://localhost:8082",
+        loggedIn: localStorage.getItem("adminLoggedIn") === "true",
+        adminRole: localStorage.getItem("adminRole") || "editor",
+        adminUser: localStorage.getItem("adminUser") || "admin",
+      };
+      const pageSize = 50;
+      const paging = {
+        products: { page: 1, q: "" },
+        categories: { page: 1, q: "" },
+        stocks: { page: 1, q: "" },
+        audit: { page: 1, q: "", source: "catalog" },
+        users: { page: 1, q: "" },
+      };
+
+      const el = (id) => document.getElementById(id);
+      const debounce = (fn, wait = 300) => {
+        let t;
+        return (...args) => {
+          clearTimeout(t);
+          t = setTimeout(() => fn(...args), wait);
+        };
+      };
+      const buildQuery = (base, params) => {
+        const search = new URLSearchParams();
+        Object.entries(params || {}).forEach(([key, value]) => {
+          if (value === undefined || value === null || value === "") return;
+          search.set(key, String(value));
+        });
+        const query = search.toString();
+        return query ? `${base}?${query}` : base;
+      };
+      const setPageLabel = (id, page) => {
+        const node = el(id);
+        if (node) node.textContent = String(page);
+      };
+      const setPagerButtons = (prevId, nextId, page, count) => {
+        const prev = el(prevId);
+        const next = el(nextId);
+        if (prev) prev.disabled = page <= 1;
+        if (next) next.disabled = count < pageSize;
+      };
+      function syncInputs() {
+        if (el("apiUrl")) el("apiUrl").value = state.apiUrl;
+        if (el("adminKey")) el("adminKey").value = state.adminKey ? "********" : "";
+        if (el("ordersApiUrl")) el("ordersApiUrl").value = state.ordersApiUrl;
+        if (el("loginApiUrl")) el("loginApiUrl").value = state.apiUrl;
+        if (el("loginOrdersApiUrl")) el("loginOrdersApiUrl").value = state.ordersApiUrl;
+        if (el("loginUsername")) el("loginUsername").value = "";
+        if (el("loginPassword")) el("loginPassword").value = "";
+        if (el("adminUserName")) el("adminUserName").textContent = state.adminUser || "admin";
+        if (el("adminRoleBadge")) el("adminRoleBadge").textContent = state.adminRole || "editor";
+      }
+      syncInputs();
+      applyRoleUI();
+
+      function setLocked(locked) {
+        document.body.classList.toggle("admin-locked", locked);
+        el("lockOverlay").style.display = locked ? "flex" : "none";
+      }
+
+      setLocked(!state.loggedIn);
+
+      function canEdit() {
+        return (state.adminRole || "editor") !== "viewer";
+      }
+
+      function applyRoleUI() {
+        const editable = canEdit();
+        ["addProductCard", "addCategoryCard", "importStockCard"].forEach((id) => {
+          const node = el(id);
+          if (node) node.classList.toggle("d-none", !editable);
+        });
+        ["editProductCard", "editCategoryCard", "editStockCard"].forEach((id) => {
+          const node = el(id);
+          if (node && !editable) node.classList.add("d-none");
+        });
+        ["bulkDeleteProducts", "selectAllProducts", "addProduct", "addCategory", "importStock", "saveProduct", "saveCategory", "saveStock"].forEach((id) => {
+          const node = el(id);
+          if (node) node.disabled = !editable;
+        });
+      }
+
+      function api(path, options = {}) {
+        return fetch(state.apiUrl + path, {
+          ...options,
+          headers: {
+            "Content-Type": "application/json",
+            "X-Admin-Key": state.adminKey,
+            "X-Admin-User": state.adminUser || "admin",
+            ...(options.headers || {}),
+          },
+        });
+      }
+
+      function setStatus(text, ok) {
+        const badge = el("connectionStatus");
+        badge.textContent = text;
+        badge.className = "badge " + (ok ? "bg-green" : "bg-red");
+      }
+
+      async function testConnection() {
+        try {
+          const res = await api("/admin/metrics");
+          if (!res.ok) throw new Error("not ok");
+          setStatus("Connected", true);
+          state.loggedIn = true;
+          localStorage.setItem("adminLoggedIn", "true");
+          setLocked(false);
+          if (el("loginError")) el("loginError").classList.add("d-none");
+          applyRoleUI();
+          await loadAll();
+        } catch (e) {
+          setStatus("Failed", false);
+          setLocked(true);
+          if (el("loginError")) el("loginError").classList.remove("d-none");
+        }
+      }
+
+      el("saveConfig").addEventListener("click", () => {
+        state.apiUrl = el("apiUrl").value.trim();
+        const keyInput = el("adminKey").value.trim();
+        if (keyInput && keyInput !== "********") {
+          state.adminKey = keyInput;
+          localStorage.setItem("adminKey", state.adminKey);
+        }
+        state.ordersApiUrl = el("ordersApiUrl").value.trim();
+        localStorage.setItem("adminApiUrl", state.apiUrl);
+        localStorage.setItem("ordersApiUrl", state.ordersApiUrl);
+        testConnection();
+      });
+
+      el("loginSubmit").addEventListener("click", async () => {
+        state.apiUrl = el("loginApiUrl").value.trim();
+        state.ordersApiUrl = el("loginOrdersApiUrl").value.trim();
+        const username = el("loginUsername").value.trim();
+        const password = el("loginPassword").value.trim();
+        if (!state.apiUrl || !username || !password) return;
+        localStorage.setItem("adminApiUrl", state.apiUrl);
+        localStorage.setItem("ordersApiUrl", state.ordersApiUrl);
+        try {
+          const res = await fetch(state.apiUrl + "/admin/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ username, password }),
+          });
+          if (!res.ok) throw new Error("login failed");
+          const data = await res.json();
+          state.adminKey = data.adminKey || "";
+          state.adminRole = data.role || "editor";
+          state.adminUser = username;
+          localStorage.setItem("adminKey", state.adminKey);
+          localStorage.setItem("adminRole", state.adminRole);
+          localStorage.setItem("adminUser", state.adminUser);
+          testConnection();
+          syncInputs();
+        } catch (e) {
+          if (el("loginError")) el("loginError").classList.remove("d-none");
+        }
+      });
+
+      el("logout").addEventListener("click", () => {
+        state.loggedIn = false;
+        localStorage.setItem("adminLoggedIn", "false");
+        setStatus("Logout", false);
+        setLocked(true);
+        window.location.reload();
+      });
+
+      async function loadMetrics() {
+        const res = await api("/admin/metrics");
+        if (!res.ok) return;
+        const data = await res.json();
+        el("metricProducts").textContent = data.totalProducts || 0;
+        el("metricCategories").textContent = data.totalCategories || 0;
+        el("metricStocks").textContent = data.totalStocksAvailable || 0;
+
+        const tbody = el("lowStockBody");
+        tbody.innerHTML = "";
+        (data.lowStockSku || []).forEach((row) => {
+          const tr = document.createElement("tr");
+          tr.innerHTML = `<td>${row.productId}</td><td>${row.available}</td>`;
+          tbody.appendChild(tr);
+        });
+      }
+
+      async function loadCategories() {
+        const { page, q } = paging.categories;
+        const offset = (page - 1) * pageSize;
+        const res = await api(buildQuery("/admin/categories", { limit: pageSize, offset, q }));
+        if (!res.ok) return;
+        const data = await res.json();
+        const tbody = el("categoriesBody");
+        tbody.innerHTML = "";
+        (data.data || []).forEach((cat) => {
+          const tr = document.createElement("tr");
+          const actions = canEdit()
+            ? `<button class="btn btn-sm btn-outline-primary" data-edit="${cat.id}">Edit</button>
+               <button class="btn btn-sm btn-outline-danger" data-del="${cat.id}">Hapus</button>`
+            : `<span class="text-muted">Viewer</span>`;
+          tr.innerHTML = `
+            <td>${cat.id}</td>
+            <td>${cat.name}</td>
+            <td>${cat.slug}</td>
+            <td>${cat.icon || "-"}</td>
+            <td class="text-end">${actions}</td>`;
+          tbody.appendChild(tr);
+        });
+        setPageLabel("pageCategories", page);
+        setPagerButtons("prevCategories", "nextCategories", page, (data.data || []).length);
+        if (!canEdit()) return;
+        tbody.querySelectorAll("[data-edit]").forEach((btn) => {
+          btn.addEventListener("click", async () => {
+            const id = btn.getAttribute("data-edit");
+            const cat = (data.data || []).find((c) => String(c.id) === String(id));
+            if (!cat) return;
+            el("editCategoryCard").classList.remove("d-none");
+            el("editCatId").value = cat.id;
+            el("editCatName").value = cat.name || "";
+            el("editCatSlug").value = cat.slug || "";
+            el("editCatIcon").value = cat.icon || "";
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          });
+        });
+        tbody.querySelectorAll("[data-del]").forEach((btn) => {
+          btn.addEventListener("click", async () => {
+            const id = btn.getAttribute("data-del");
+            if (!confirm("Hapus kategori ini?")) return;
+            await api("/admin/categories/" + id, { method: "DELETE" });
+            loadCategories();
+          });
+        });
+      }
+
+      async function loadProducts() {
+        const { page, q } = paging.products;
+        const offset = (page - 1) * pageSize;
+        const res = await api(buildQuery("/admin/products", { limit: pageSize, offset, q }));
+        if (!res.ok) return;
+        const data = await res.json();
+        const tbody = el("productsBody");
+        tbody.innerHTML = "";
+        (data.data || []).forEach((p) => {
+          const tr = document.createElement("tr");
+          const checkbox = canEdit() ? `<input type="checkbox" class="product-check" data-id="${p.id}" />` : "";
+          const actions = canEdit()
+            ? `<button class="btn btn-sm btn-outline-primary" data-edit="${p.id}">Edit</button>
+               <button class="btn btn-sm btn-outline-danger" data-del="${p.id}">Hapus</button>`
+            : `<span class="text-muted">Viewer</span>`;
+          tr.innerHTML = `
+            <td>${checkbox}</td>
+            <td>${p.id}</td>
+            <td>${p.name}</td>
+            <td>${p.slug}</td>
+            <td>Rp ${p.price}</td>
+            <td>${p.status}</td>
+            <td class="text-end">${actions}</td>`;
+          tbody.appendChild(tr);
+        });
+        setPageLabel("pageProducts", page);
+        setPagerButtons("prevProducts", "nextProducts", page, (data.data || []).length);
+        window.__productMap = (data.data || []).reduce((acc, p) => {
+          acc[String(p.id)] = p.name;
+          return acc;
+        }, {});
+        if (!canEdit()) return;
+        tbody.querySelectorAll("[data-edit]").forEach((btn) => {
+          btn.addEventListener("click", async () => {
+            const id = btn.getAttribute("data-edit");
+            const prod = (data.data || []).find((p) => String(p.id) === String(id));
+            if (!prod) return;
+            el("editProductCard").classList.remove("d-none");
+            el("editProdId").value = prod.id;
+            el("editProdCategoryId").value = prod.categoryId || "";
+            el("editProdName").value = prod.name || "";
+            el("editProdSlug").value = prod.slug || "";
+            el("editProdPrice").value = prod.price || 0;
+            el("editProdStatus").value = prod.status || "ACTIVE";
+            el("editProdType").value = prod.type || "ACCOUNT";
+            el("editProdDesc").value = prod.description || "";
+            el("editProdImage").value = prod.image || "";
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          });
+        });
+        tbody.querySelectorAll("[data-del]").forEach((btn) => {
+          btn.addEventListener("click", async () => {
+            const id = btn.getAttribute("data-del");
+            if (!confirm("Hapus produk ini?")) return;
+            await api("/admin/products/" + id, { method: "DELETE" });
+            loadProducts();
+          });
+        });
+      }
+
+      async function loadStocks() {
+        const filter = el("stockFilterProductId").value.trim();
+        const { page, q } = paging.stocks;
+        const offset = (page - 1) * pageSize;
+        const path = buildQuery("/admin/stocks", { productId: filter || undefined, limit: pageSize, offset, q });
+        const res = await api(path);
+        if (!res.ok) return;
+        const data = await res.json();
+        const tbody = el("stocksBody");
+        tbody.innerHTML = "";
+        (data.data || []).forEach((s) => {
+          const tr = document.createElement("tr");
+          const editBtn = canEdit()
+            ? `<button class="btn btn-sm btn-outline-primary" data-edit-stock="${s.id}">Edit</button>`
+            : `<span class="text-muted">Viewer</span>`;
+          tr.innerHTML = `
+            <td>${s.id}</td>
+            <td>${s.productId}</td>
+            <td>${s.status}</td>
+            <td>${s.invoiceId || "-"}</td>
+            <td class="text-truncate" style="max-width: 240px">${s.payload}</td>
+            <td class="text-end">${editBtn}</td>`;
+          tbody.appendChild(tr);
+        });
+        setPageLabel("pageStocks", page);
+        setPagerButtons("prevStocks", "nextStocks", page, (data.data || []).length);
+        window.__stocksCache = data.data || [];
+        if (!canEdit()) return;
+        tbody.querySelectorAll("[data-edit-stock]").forEach((btn) => {
+          btn.addEventListener("click", () => {
+            const id = btn.getAttribute("data-edit-stock");
+            const stock = (data.data || []).find((x) => String(x.id) === String(id));
+            if (!stock) return;
+            el("editStockCard").classList.remove("d-none");
+            el("editStockId").value = stock.id;
+            el("editStockStatus").value = stock.status || "AVAILABLE";
+            el("editStockInvoiceId").value = stock.invoiceId || "";
+            el("editStockPayload").value = stock.payload || "";
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          });
+        });
+      }
+
+      el("addCategory").addEventListener("click", async () => {
+        const name = el("catName").value.trim();
+        const slug = el("catSlug").value.trim();
+        const icon = el("catIcon").value.trim();
+        if (!name || !slug) return;
+        await api("/admin/categories", { method: "POST", body: JSON.stringify({ name, slug, icon }) });
+        el("catName").value = "";
+        el("catSlug").value = "";
+        el("catIcon").value = "";
+        loadCategories();
+      });
+
+      el("saveCategory").addEventListener("click", async () => {
+        const id = el("editCatId").value.trim();
+        const name = el("editCatName").value.trim();
+        const slug = el("editCatSlug").value.trim();
+        const icon = el("editCatIcon").value.trim();
+        if (!id || !name || !slug) return;
+        await api("/admin/categories/" + id, { method: "PUT", body: JSON.stringify({ name, slug, icon }) });
+        el("editCategoryCard").classList.add("d-none");
+        loadCategories();
+      });
+
+      el("cancelEditCategory").addEventListener("click", () => {
+        el("editCategoryCard").classList.add("d-none");
+      });
+
+      el("addProduct").addEventListener("click", async () => {
+        const payload = {
+          categoryId: parseInt(el("prodCategoryId").value.trim() || "0", 10),
+          name: el("prodName").value.trim(),
+          slug: el("prodSlug").value.trim(),
+          price: parseInt(el("prodPrice").value.trim() || "0", 10),
+          status: el("prodStatus").value.trim() || "ACTIVE",
+          type: el("prodType").value.trim() || "ACCOUNT",
+          description: el("prodDesc").value.trim(),
+          image: el("prodImage").value.trim(),
+        };
+        if (!payload.categoryId || !payload.name || !payload.slug) return;
+        await api("/admin/products", { method: "POST", body: JSON.stringify(payload) });
+        ["prodCategoryId", "prodName", "prodSlug", "prodPrice", "prodStatus", "prodType", "prodDesc", "prodImage"].forEach((id) => (el(id).value = ""));
+        loadProducts();
+      });
+
+      el("saveProduct").addEventListener("click", async () => {
+        const payload = {
+          categoryId: parseInt(el("editProdCategoryId").value.trim() || "0", 10),
+          name: el("editProdName").value.trim(),
+          slug: el("editProdSlug").value.trim(),
+          price: parseInt(el("editProdPrice").value.trim() || "0", 10),
+          status: el("editProdStatus").value.trim() || "ACTIVE",
+          type: el("editProdType").value.trim() || "ACCOUNT",
+          description: el("editProdDesc").value.trim(),
+          image: el("editProdImage").value.trim(),
+        };
+        const id = el("editProdId").value.trim();
+        if (!id || !payload.categoryId || !payload.name || !payload.slug) return;
+        await api("/admin/products/" + id, { method: "PUT", body: JSON.stringify(payload) });
+        el("editProductCard").classList.add("d-none");
+        loadProducts();
+      });
+
+      el("cancelEditProduct").addEventListener("click", () => {
+        el("editProductCard").classList.add("d-none");
+      });
+
+      el("refreshCategories").addEventListener("click", loadCategories);
+      el("refreshProducts").addEventListener("click", loadProducts);
+      el("refreshStocks").addEventListener("click", loadStocks);
+      el("productSearch").addEventListener(
+        "input",
+        debounce((e) => {
+          paging.products.q = e.target.value.trim();
+          paging.products.page = 1;
+          loadProducts();
+        })
+      );
+      el("categorySearch").addEventListener(
+        "input",
+        debounce((e) => {
+          paging.categories.q = e.target.value.trim();
+          paging.categories.page = 1;
+          loadCategories();
+        })
+      );
+      el("stockSearch").addEventListener(
+        "input",
+        debounce((e) => {
+          paging.stocks.q = e.target.value.trim();
+          paging.stocks.page = 1;
+          loadStocks();
+        })
+      );
+      el("prevProducts").addEventListener("click", () => {
+        if (paging.products.page > 1) {
+          paging.products.page -= 1;
+          loadProducts();
+        }
+      });
+      el("nextProducts").addEventListener("click", () => {
+        paging.products.page += 1;
+        loadProducts();
+      });
+      el("prevCategories").addEventListener("click", () => {
+        if (paging.categories.page > 1) {
+          paging.categories.page -= 1;
+          loadCategories();
+        }
+      });
+      el("nextCategories").addEventListener("click", () => {
+        paging.categories.page += 1;
+        loadCategories();
+      });
+      el("prevStocks").addEventListener("click", () => {
+        if (paging.stocks.page > 1) {
+          paging.stocks.page -= 1;
+          loadStocks();
+        }
+      });
+      el("nextStocks").addEventListener("click", () => {
+        paging.stocks.page += 1;
+        loadStocks();
+      });
+      if (canEdit()) {
+        el("selectAllProducts").addEventListener("change", (e) => {
+          document.querySelectorAll(".product-check").forEach((cb) => (cb.checked = e.target.checked));
+        });
+        el("bulkDeleteProducts").addEventListener("click", async () => {
+          const ids = Array.from(document.querySelectorAll(".product-check"))
+            .filter((cb) => cb.checked)
+            .map((cb) => cb.getAttribute("data-id"));
+          if (ids.length === 0) return;
+          if (!confirm(`Hapus ${ids.length} produk?`)) return;
+          for (const id of ids) {
+            await api("/admin/products/" + id, { method: "DELETE" });
+          }
+          loadProducts();
+        });
+      } else {
+        el("selectAllProducts").disabled = true;
+        el("bulkDeleteProducts").disabled = true;
+      }
+      el("exportStocks").addEventListener("click", () => {
+        const rows = window.__stocksCache || [];
+        const csv = [
+          ["id", "productId", "status", "invoiceId", "payload"].join(","),
+          ...rows.map((s) => [s.id, s.productId, s.status, s.invoiceId || "", (s.payload || "").replace(/,/g, " ")].join(",")),
+        ].join("\n");
+        const blob = new Blob([csv], { type: "text/csv" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "stocks.csv";
+        a.click();
+        URL.revokeObjectURL(url);
+      });
+
+      el("importStock").addEventListener("click", async () => {
+        const productId = parseInt(el("stockProductId").value.trim() || "0", 10);
+        const payloads = el("stockPayloads").value.split("\n").map((l) => l.trim()).filter(Boolean);
+        if (!productId || payloads.length === 0) return;
+        await api("/admin/stocks/import", { method: "POST", body: JSON.stringify({ productId, payloads }) });
+        el("stockPayloads").value = "";
+        loadStocks();
+        loadMetrics();
+      });
+
+      el("saveStock").addEventListener("click", async () => {
+        const id = el("editStockId").value.trim();
+        const status = el("editStockStatus").value.trim();
+        const invoiceId = el("editStockInvoiceId").value.trim();
+        const payload = el("editStockPayload").value.trim();
+        if (!id || !status) return;
+        await api("/admin/stocks/" + id, { method: "PUT", body: JSON.stringify({ status, invoiceId, payload }) });
+        el("editStockCard").classList.add("d-none");
+        loadStocks();
+      });
+
+      el("cancelEditStock").addEventListener("click", () => {
+        el("editStockCard").classList.add("d-none");
+      });
+
+      async function loadAll() {
+        await Promise.all([loadMetrics(), loadCategories(), loadProducts(), loadStocks(), loadOrders(), loadAuditLogs(), loadUsers()]);
+      }
+
+      if (state.adminKey && state.loggedIn) {
+        testConnection();
+      }
+
+      async function loadOrders() {
+        const limit = el("ordersLimit").value.trim() || "100";
+        const res = await fetch(state.ordersApiUrl + "/admin/invoices?limit=" + limit, {
+          headers: { "X-Admin-Key": state.adminKey, "X-Admin-User": state.adminUser || "admin" },
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        const tbody = el("ordersBody");
+        tbody.innerHTML = "";
+        (data.data || []).forEach((o) => {
+          const productName = (window.__productMap || {})[String(o.productId)] || "-";
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td><a href="#" data-invoice="${o.invoiceCode}">${o.invoiceCode}</a></td>
+            <td><span class="badge ${o.status === "PAID" ? "bg-green" : "bg-yellow"}">${o.status}</span></td>
+            <td>Rp ${o.amount}</td>
+            <td>${o.contact || "-"}</td>
+            <td>${productName} <span class="text-muted">#${o.productId || "-"}</span></td>
+            <td><a href="${o.invoiceUrl || "#"}" target="_blank">${o.createdAt || "-"}</a></td>`;
+          tbody.appendChild(tr);
+        });
+        tbody.querySelectorAll("[data-invoice]").forEach((a) => {
+          a.addEventListener("click", async (e) => {
+            e.preventDefault();
+            const code = a.getAttribute("data-invoice");
+            const res = await fetch(state.ordersApiUrl + "/admin/deliveries/" + code, {
+              headers: { "X-Admin-Key": state.adminKey, "X-Admin-User": state.adminUser || "admin" },
+            });
+            const data = await res.json();
+            el("deliveryDetail").textContent = JSON.stringify(data, null, 2);
+          });
+        });
+        window.__ordersCache = data.data || [];
+      }
+
+      el("refreshOrders").addEventListener("click", loadOrders);
+      el("exportOrders").addEventListener("click", () => {
+        const rows = window.__ordersCache || [];
+        const csv = [
+          ["invoiceCode", "status", "amount", "contact", "productId", "createdAt"].join(","),
+          ...rows.map((o) => [o.invoiceCode, o.status, o.amount, o.contact || "", o.productId || "", o.createdAt || ""].join(",")),
+        ].join("\n");
+        const blob = new Blob([csv], { type: "text/csv" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "orders.csv";
+        a.click();
+        URL.revokeObjectURL(url);
+      });
+
+      async function loadAuditLogs() {
+        const { page, q, source } = paging.audit;
+        const offset = (page - 1) * pageSize;
+        let data = { data: [] };
+        if (source === "orders") {
+          const res = await fetch(buildQuery(state.ordersApiUrl + "/admin/audit-logs", { limit: pageSize, offset, q }), {
+            headers: { "X-Admin-Key": state.adminKey, "X-Admin-User": state.adminUser || "admin" },
+          });
+          if (!res.ok) return;
+          data = await res.json();
+        } else {
+          const res = await api(buildQuery("/admin/audit-logs", { limit: pageSize, offset, q }));
+          if (!res.ok) return;
+          data = await res.json();
+        }
+        const tbody = el("auditBody");
+        tbody.innerHTML = "";
+        (data.data || []).forEach((a) => {
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td>${a.id}</td>
+            <td>${a.actor}</td>
+            <td>${a.role}</td>
+            <td>${a.action}</td>
+            <td>${a.entity}</td>
+            <td>${a.entityId || "-"}</td>
+            <td class="text-truncate" style="max-width: 220px">${a.meta || "-"}</td>
+            <td>${a.createdAt || "-"}</td>`;
+          tbody.appendChild(tr);
+        });
+        setPageLabel("pageAudit", page);
+        setPagerButtons("prevAudit", "nextAudit", page, (data.data || []).length);
+      }
+
+      el("refreshAudit").addEventListener("click", loadAuditLogs);
+      el("auditSearch").addEventListener(
+        "input",
+        debounce((e) => {
+          paging.audit.q = e.target.value.trim();
+          paging.audit.page = 1;
+          loadAuditLogs();
+        })
+      );
+      el("auditSource").addEventListener("change", (e) => {
+        paging.audit.source = e.target.value;
+        paging.audit.page = 1;
+        loadAuditLogs();
+      });
+      el("prevAudit").addEventListener("click", () => {
+        if (paging.audit.page > 1) {
+          paging.audit.page -= 1;
+          loadAuditLogs();
+        }
+      });
+      el("nextAudit").addEventListener("click", () => {
+        paging.audit.page += 1;
+        loadAuditLogs();
+      });
+
+      async function loadUsers() {
+        const { page, q } = paging.users;
+        const offset = (page - 1) * pageSize;
+        const res = await api(buildQuery("/admin/users", { limit: pageSize, offset, q }));
+        if (!res.ok) return;
+        const data = await res.json();
+        const tbody = el("usersBody");
+        tbody.innerHTML = "";
+        (data.data || []).forEach((u) => {
+          const actions = canEdit()
+            ? `<button class="btn btn-sm btn-outline-primary" data-edit-user="${u.id}">Edit</button>
+               <button class="btn btn-sm btn-outline-danger" data-del-user="${u.id}">Hapus</button>`
+            : `<span class="text-muted">Viewer</span>`;
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td>${u.id}</td>
+            <td>${u.username}</td>
+            <td>${u.role}</td>
+            <td>${u.createdAt || "-"}</td>
+            <td class="text-end">${actions}</td>`;
+          tbody.appendChild(tr);
+        });
+        setPageLabel("pageUsers", page);
+        setPagerButtons("prevUsers", "nextUsers", page, (data.data || []).length);
+        if (!canEdit()) return;
+        tbody.querySelectorAll("[data-edit-user]").forEach((btn) => {
+          btn.addEventListener("click", async () => {
+            const id = btn.getAttribute("data-edit-user");
+            const user = (data.data || []).find((x) => String(x.id) === String(id));
+            if (!user) return;
+            const role = prompt("Role (editor/viewer):", user.role || "editor");
+            if (!role) return;
+            await api("/admin/users/" + id, { method: "PUT", body: JSON.stringify({ role }) });
+            loadUsers();
+          });
+        });
+        tbody.querySelectorAll("[data-del-user]").forEach((btn) => {
+          btn.addEventListener("click", async () => {
+            const id = btn.getAttribute("data-del-user");
+            if (!confirm("Hapus user ini?")) return;
+            await api("/admin/users/" + id, { method: "DELETE" });
+            loadUsers();
+          });
+        });
+      }
+
+      el("addUser").addEventListener("click", async () => {
+        const username = el("newUserName").value.trim();
+        const password = el("newUserPassword").value.trim();
+        const role = el("newUserRole").value.trim();
+        if (!username || !password || !role) return;
+        await api("/admin/users", { method: "POST", body: JSON.stringify({ username, password, role }) });
+        el("newUserName").value = "";
+        el("newUserPassword").value = "";
+        el("newUserRole").value = "editor";
+        loadUsers();
+      });
+
+      el("refreshUsers").addEventListener("click", loadUsers);
+      el("userSearch").addEventListener(
+        "input",
+        debounce((e) => {
+          paging.users.q = e.target.value.trim();
+          paging.users.page = 1;
+          loadUsers();
+        })
+      );
+      el("prevUsers").addEventListener("click", () => {
+        if (paging.users.page > 1) {
+          paging.users.page -= 1;
+          loadUsers();
+        }
+      });
+      el("nextUsers").addEventListener("click", () => {
+        paging.users.page += 1;
+        loadUsers();
+      });
+    </script>
+    <script src="https://unpkg.com/@tabler/core@1.0.0-beta20/dist/js/tabler.min.js"></script>
   </body>
 </html>

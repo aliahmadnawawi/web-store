@@ -6,7 +6,7 @@
 
 Sebelas Indonesia is a mobile-first digital products marketplace with guest checkout, auto-delivery, and an AI-driven home feed.
 
-**Brand color:** `#0E47A1`
+**Brand color:** `#038383`
 
 ## Features
 
@@ -36,8 +36,19 @@ services/
   ai-python/      Python service (recommendation, fraud)
 infra/
   docker-compose.yml
+  docker-compose.app.yml
+  app.env.example
 docs/
   merchant-feed.xml
+
+## Deployment (Docker)
+
+1. Start databases + Redis:
+   - `docker compose -f infra/docker-compose.yml up -d --build`
+2. Copy env template and edit secrets:
+   - `cp infra/app.env.example infra/app.env`
+3. Start app services:
+   - `docker compose --env-file infra/app.env -f infra/docker-compose.app.yml up -d --build`
   api.md
   flows.md
   merchant.md

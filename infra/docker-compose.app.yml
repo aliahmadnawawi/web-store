@@ -1,0 +1,88 @@
+services:
+  web:
+    build:
+      context: ../apps/web
+      args:
+        NEXT_PUBLIC_CATALOG_API: ${PUBLIC_CATALOG_API}
+        NEXT_PUBLIC_ORDERS_API: ${PUBLIC_ORDERS_API}
+        NEXT_PUBLIC_AI_API: ${PUBLIC_AI_API}
+    container_name: sebelas-web
+    ports:
+      - "127.0.0.1:3000:3000"
+    restart: unless-stopped
+    networks:
+      - infra_default
+
+  admin:
+    build:
+      context: ../apps/admin
+    container_name: sebelas-admin
+    ports:
+      - "127.0.0.1:3100:80"
+    restart: unless-stopped
+    networks:
+      - infra_default
+
+  catalog:
+    build:
+      context: ../services/catalog-go
+    container_name: sebelas-catalog
+    environment:
+      PORT: "8081"
+      MYSQL_DSN: ${MYSQL_DSN}
+      REDIS_ADDR: ${REDIS_ADDR}
+      TRIPAY_PPOB_API_KEY: ${TRIPAY_PPOB_API_KEY}
+      TRIPAY_PPOB_BASE_URL: ${TRIPAY_PPOB_BASE_URL}
+      ADMIN_API_KEY: ${ADMIN_API_KEY}
+      ADMIN_ROLE: ${ADMIN_ROLE}
+      LOW_STOCK_THRESHOLD: ${LOW_STOCK_THRESHOLD}
+    ports:
+      - "127.0.0.1:8081:8081"
+    restart: unless-stopped
+    networks:
+      - infra_default
+
+  orders:
+    build:
+      context: ../services/orders-java
+    container_name: sebelas-orders
+    environment:
+      PORT: "8082"
+      POSTGRES_URL: ${POSTGRES_URL}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      REDIS_HOST: ${REDIS_HOST}
+      REDIS_PORT: ${REDIS_PORT}
+      TRIPAY_API_KEY: ${TRIPAY_API_KEY}
+      TRIPAY_PRIVATE_KEY: ${TRIPAY_PRIVATE_KEY}
+      TRIPAY_MERCHANT_CODE: ${TRIPAY_MERCHANT_CODE}
+      TRIPAY_BASE_URL: ${TRIPAY_BASE_URL}
+      TRIPAY_CALLBACK_URL: ${TRIPAY_CALLBACK_URL}
+      TRIPAY_RETURN_URL: ${TRIPAY_RETURN_URL}
+      JWT_SECRET: ${JWT_SECRET}
+      CATALOG_API: ${CATALOG_API}
+      AI_API: ${AI_API}
+      FONNTE_TOKEN: ${FONNTE_TOKEN}
+      MAILERSEND_API_KEY: ${MAILERSEND_API_KEY}
+      MAILERSEND_FROM: ${MAILERSEND_FROM}
+      ADMIN_API_KEY: ${ADMIN_API_KEY}
+      ADMIN_ROLE: ${ADMIN_ROLE}
+    ports:
+      - "127.0.0.1:8082:8082"
+    restart: unless-stopped
+    networks:
+      - infra_default
+
+  ai:
+    build:
+      context: ../services/ai-python
+    container_name: sebelas-ai
+    ports:
+      - "127.0.0.1:8000:8000"
+    restart: unless-stopped
+    networks:
+      - infra_default
+
+networks:
+  infra_default:
+    external: true

@@ -27,7 +27,14 @@ public class TripayPpobService {
   private final ObjectMapper mapper = new ObjectMapper();
 
   public PrepaidProduct getPrepaidProduct(String code) {
-    Map<String, Object> resp = get("/v2/pembelian/produk/cek", Map.of("code", code));
+    requireConfigured();
+    if (code == null || code.isBlank()) {
+      throw new IllegalArgumentException("invalid product");
+    }
+
+    MultiValueMap<String, String> form = new LinkedMultiValueMap<>();
+    form.add("code", code);
+    Map<String, Object> resp = postForm("/v2/pembelian/produk/cek", form);
     Map<String, Object> first = firstDataItem(resp);
     String productName = asString(first.get("product_name"));
     int price = asInt(first.get("price"));
@@ -115,27 +122,6 @@ public class TripayPpobService {
     }
   }
 
-  private Map<String, Object> get(String path, Map<String, String> query) {
-    requireConfigured();
-    String url = baseUrl.replaceAll("/+$", "") + path;
-    if (query != null && !query.isEmpty()) {
-      String q = query.entrySet().stream()
-        .map(e -> e.getKey() + "=" + encode(e.getValue()))
-        .reduce((a, b) -> a + "&" + b)
-        .orElse("");
-      url = url + "?" + q;
-    }
-    HttpHeaders headers = new HttpHeaders();
-    headers.setBearerAuth(apiKey);
-    headers.setAccept(List.of(MediaType.APPLICATION_JSON));
-    try {
-      ResponseEntity<Map> resp = rest.exchange(url, HttpMethod.GET, new HttpEntity<>(headers), Map.class);
-      return resp.getBody() == null ? Map.of() : resp.getBody();
-    } catch (RestClientException e) {
-      throw new IllegalArgumentException("ppob unavailable");
-    }
-  }
-
   private Map<String, Object> postForm(String path, MultiValueMap<String, String> form) {
     String url = baseUrl.replaceAll("/+$", "") + path;
     HttpHeaders headers = new HttpHeaders();
@@ -184,14 +170,6 @@ public class TripayPpobService {
     }
   }
 
-  private static String encode(String v) {
-    try {
-      return java.net.URLEncoder.encode(v == null ? "" : v, java.nio.charset.StandardCharsets.UTF_8);
-    } catch (Exception e) {
-      return "";
-    }
-  }
-
   public record PrepaidProduct(String code, String name, int price) {}
 
   public record PostpaidBill(String orderId, String productName, int amount, String customerName) {}
@@ -204,4 +182,3 @@ public class TripayPpobService {
     }
   }
 }
-

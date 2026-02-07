@@ -1,7 +1,7 @@
 # Example Caddyfile (host-installed Caddy on Ubuntu)
 #
 # Assumes `infra/docker-compose.app.yml` publishes services on localhost:
-# - web:    127.0.0.1:3000
+# - web:    127.0.0.1:3002
 # - admin:  127.0.0.1:3100
 # - catalog 127.0.0.1:8083
 # - orders: 127.0.0.1:8082
@@ -11,7 +11,7 @@
 
 sebelasindonesia.app {
   encode zstd gzip
-  reverse_proxy 127.0.0.1:3000
+  reverse_proxy 127.0.0.1:3002
 }
 
 www.sebelasindonesia.app {

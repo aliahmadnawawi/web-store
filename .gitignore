@@ -10,14 +10,14 @@ dist/
 .expo-shared/
 
 # Java
-/target/
+target/
 *.class
 *.jar
 *.war
 *.ear
 
 # Go
-/bin/
+bin/
 *.exe
 *.test
 

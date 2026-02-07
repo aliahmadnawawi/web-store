@@ -88,17 +88,23 @@ public class AdminController {
     String role = requireAdmin(key);
     List<Invoice> all = invoiceRepo.findAll(Sort.by(Sort.Direction.DESC, "createdAt"));
     audit(actor == null ? "admin" : actor, role, "LIST", "invoice", "", "limit=" + limit);
-    List<Map<String, Object>> data = all.stream().limit(limit).map(inv -> Map.<String, Object>of(
-      "id", inv.getId(),
-      "invoiceCode", inv.getInvoiceCode(),
-      "token", inv.getToken(),
-      "invoiceUrl", "https://sebelasindonesia.app/invoice/" + inv.getToken(),
-      "status", inv.getStatus(),
-      "amount", inv.getAmount(),
-      "productId", inv.getProductId(),
-      "contact", inv.getContact(),
-      "memberId", inv.getMemberId(),
-      "createdAt", inv.getCreatedAt()
+    List<Map<String, Object>> data = all.stream().limit(limit).map(inv -> Map.<String, Object>ofEntries(
+      Map.entry("id", inv.getId()),
+      Map.entry("invoiceCode", inv.getInvoiceCode()),
+      Map.entry("token", inv.getToken()),
+      Map.entry("invoiceUrl", "https://sebelasindonesia.app/invoice/" + inv.getToken()),
+      Map.entry("status", inv.getStatus()),
+      Map.entry("orderType", inv.getOrderType()),
+      Map.entry("baseAmount", inv.getBaseAmount()),
+      Map.entry("amount", inv.getAmount()),
+      Map.entry("productId", inv.getProductId()),
+      Map.entry("productName", inv.getProductName()),
+      Map.entry("productType", inv.getProductType()),
+      Map.entry("ppobCode", inv.getPpobCode()),
+      Map.entry("ppobCustomerNumber", inv.getPpobCustomerNumber()),
+      Map.entry("contact", inv.getContact()),
+      Map.entry("memberId", inv.getMemberId()),
+      Map.entry("createdAt", inv.getCreatedAt())
     )).toList();
     return Map.of("data", data);
   }

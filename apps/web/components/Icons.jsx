@@ -157,3 +157,27 @@ export function IconGrid({ className }) {
     </svg>
   );
 }
+
+export function IconBolt({ className }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path
+        d="M13 2 4 14h7l-1 8 9-12h-7l1-8Z"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+export function IconWifi({ className }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M5 9a12 12 0 0 1 14 0" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      <path d="M8.5 12.5a7 7 0 0 1 7 0" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      <path d="M11 16a2.5 2.5 0 0 1 2 0" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      <circle cx="12" cy="19" r="1.2" fill="currentColor" />
+    </svg>
+  );
+}

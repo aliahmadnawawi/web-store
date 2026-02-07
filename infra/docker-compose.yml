@@ -7,8 +7,8 @@ services:
       MYSQL_DATABASE: sebelas_catalog
       MYSQL_USER: sebelas
       MYSQL_PASSWORD: sebelas
-    ports:
-      - "3306:3306"
+    restart: unless-stopped
+    # No published ports by default. Access using `docker exec` or add ports when needed.
     volumes:
       - mysql_data:/var/lib/mysql
       - ./mysql-init.sql:/docker-entrypoint-initdb.d/init.sql:ro
@@ -20,8 +20,8 @@ services:
       POSTGRES_USER: sebelas
       POSTGRES_PASSWORD: sebelas
       POSTGRES_DB: sebelas_orders
-    ports:
-      - "5432:5432"
+    restart: unless-stopped
+    # No published ports by default. Access using `docker exec` or add ports when needed.
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./postgres-init.sql:/docker-entrypoint-initdb.d/init.sql:ro
@@ -29,6 +29,7 @@ services:
   redis:
     image: redis:7
     container_name: sebelas-redis
+    restart: unless-stopped
 
 volumes:
   mysql_data:

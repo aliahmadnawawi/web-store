@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import id.sebelas.orders.service.StockClient;
 import id.sebelas.orders.service.DeliveryService;
+import id.sebelas.orders.service.TripayPpobService;
 import jakarta.validation.constraints.NotBlank;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
@@ -26,15 +27,17 @@ public class WebhookController {
   private final DeliveryRepo deliveryRepo;
   private final StockClient stockClient;
   private final DeliveryService deliveryService;
+  private final TripayPpobService ppobService;
 
   @Value("${TRIPAY_PRIVATE_KEY:}")
   private String tripayPrivateKey;
 
-  public WebhookController(InvoiceRepo invoiceRepo, DeliveryRepo deliveryRepo, StockClient stockClient, DeliveryService deliveryService) {
+  public WebhookController(InvoiceRepo invoiceRepo, DeliveryRepo deliveryRepo, StockClient stockClient, DeliveryService deliveryService, TripayPpobService ppobService) {
     this.invoiceRepo = invoiceRepo;
     this.deliveryRepo = deliveryRepo;
     this.stockClient = stockClient;
     this.deliveryService = deliveryService;
+    this.ppobService = ppobService;
   }
 
   @PostMapping("/tripay")
@@ -66,25 +69,85 @@ public class WebhookController {
 
     if ("PAID".equalsIgnoreCase(payload.status)) {
       invoiceRepo.findByInvoiceCode(payload.reference).ifPresent(invoice -> {
-        invoice.setStatus("PAID");
-        invoiceRepo.save(invoice);
+        boolean alreadyPaid = "PAID".equalsIgnoreCase(invoice.getStatus());
+        boolean alreadyDelivered = deliveryRepo.existsByInvoiceId(invoice.getId());
 
-        String productId = invoice.getProductId();
-        Map<String, Object> stock = (productId == null || productId.isBlank())
-          ? Map.of("payload", "manual delivery")
-          : stockClient.allocate(productId, invoice.getInvoiceCode());
+        // Stronger idempotency: do not allocate/deliver twice.
+        if (alreadyPaid && alreadyDelivered) {
+          return;
+        }
 
-        Delivery delivery = new Delivery();
-        delivery.setInvoiceId(invoice.getId());
-        delivery.setChannel("AUTO");
-        delivery.setPayload(String.valueOf(stock.getOrDefault("payload", "pending")));
-        delivery.setSentAt(Instant.now());
-        deliveryRepo.save(delivery);
+        if (!alreadyPaid) {
+          invoice.setStatus("PAID");
+          invoiceRepo.save(invoice);
+        }
 
-        if (invoice.getContact() != null && invoice.getContact().contains("@")) {
-          deliveryService.sendEmail(invoice.getContact(), "Produk: " + delivery.getPayload());
-        } else if (invoice.getContact() != null) {
-          deliveryService.sendWhatsApp(invoice.getContact(), "Produk: " + delivery.getPayload());
+        if (deliveryRepo.existsByInvoiceId(invoice.getId())) {
+          return;
+        }
+
+        String orderType = invoice.getOrderType() == null ? "" : invoice.getOrderType();
+        if (orderType.toUpperCase().startsWith("PPOB_")) {
+          String payloadMsg;
+          try {
+            if ("PPOB_PREPAID".equalsIgnoreCase(orderType)) {
+              String inquiry = (invoice.getPpobNoMeterPln() != null && !invoice.getPpobNoMeterPln().isBlank()) ? "PLN" : "I";
+              Map<String, Object> resp = ppobService.purchasePrepaid(
+                inquiry,
+                invoice.getPpobCode(),
+                invoice.getPpobPhone(),
+                invoice.getPpobNoMeterPln(),
+                invoice.getInvoiceCode()
+              );
+              invoice.setPpobRaw(ppobService.safeJson(resp));
+              invoiceRepo.save(invoice);
+              payloadMsg = "PPOB: " + String.valueOf(resp.getOrDefault("message", "queued")) +
+                " trxid=" + String.valueOf(resp.getOrDefault("trxid", ""));
+            } else if ("PPOB_POSTPAID".equalsIgnoreCase(orderType)) {
+              Map<String, Object> resp = ppobService.payBill(invoice.getPpobOrderId(), invoice.getInvoiceCode());
+              invoice.setPpobRaw(ppobService.safeJson(resp));
+              invoiceRepo.save(invoice);
+              payloadMsg = "PPOB: " + String.valueOf(resp.getOrDefault("message", "processed"));
+            } else {
+              payloadMsg = "PPOB: manual delivery";
+            }
+          } catch (Exception e) {
+            payloadMsg = "PPOB pending: " + (e.getMessage() == null ? "error" : e.getMessage());
+          }
+
+          Delivery delivery = new Delivery();
+          delivery.setInvoiceId(invoice.getId());
+          delivery.setChannel("PPOB");
+          delivery.setPayload(payloadMsg);
+          delivery.setSentAt(Instant.now());
+          deliveryRepo.save(delivery);
+        } else {
+          String productId = invoice.getProductId();
+          Map<String, Object> stock;
+          try {
+            stock = (productId == null || productId.isBlank())
+              ? Map.of("payload", "manual delivery")
+              : stockClient.allocate(productId, invoice.getInvoiceCode());
+          } catch (Exception e) {
+            stock = Map.of("payload", "pending (stock allocation failed)");
+          }
+
+          Delivery delivery = new Delivery();
+          delivery.setInvoiceId(invoice.getId());
+          delivery.setChannel("AUTO");
+          delivery.setPayload(String.valueOf(stock.getOrDefault("payload", "pending")));
+          delivery.setSentAt(Instant.now());
+          deliveryRepo.save(delivery);
+        }
+
+        try {
+          if (invoice.getContact() != null && invoice.getContact().contains("@")) {
+            deliveryService.sendEmail(invoice.getContact(), "Produk: sudah diproses. Cek halaman invoice.");
+          } else if (invoice.getContact() != null) {
+            deliveryService.sendWhatsApp(invoice.getContact(), "Produk: sudah diproses. Cek halaman invoice.");
+          }
+        } catch (Exception ignored) {
+          // Delivery attempt is best-effort; invoice is already paid.
         }
       });
     }

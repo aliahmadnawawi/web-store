@@ -26,12 +26,26 @@ public class InvoiceController {
     }
 
     return invoiceRepo.findByToken(token)
-      .map(invoice -> ResponseEntity.ok(Map.of(
-        "invoiceToken", token,
-        "status", invoice.getStatus(),
-        "amount", invoice.getAmount(),
-        "contact", invoice.getContact(),
-        "deliveries", deliveryRepo.findByInvoiceId(invoice.getId())
+      .map(invoice -> ResponseEntity.ok(Map.ofEntries(
+        Map.entry("invoiceToken", token),
+        Map.entry("invoiceCode", invoice.getInvoiceCode()),
+        Map.entry("status", invoice.getStatus()),
+        Map.entry("orderType", invoice.getOrderType()),
+        Map.entry("baseAmount", invoice.getBaseAmount()),
+        Map.entry("amount", invoice.getAmount()),
+        Map.entry("productId", invoice.getProductId()),
+        Map.entry("productName", invoice.getProductName()),
+        Map.entry("productType", invoice.getProductType()),
+        Map.entry("contact", invoice.getContact()),
+        Map.entry("checkoutUrl", invoice.getPaymentCheckoutUrl()),
+        Map.entry("ppob", Map.ofEntries(
+          Map.entry("code", invoice.getPpobCode()),
+          Map.entry("customerNumber", invoice.getPpobCustomerNumber()),
+          Map.entry("phone", invoice.getPpobPhone()),
+          Map.entry("noMeterPln", invoice.getPpobNoMeterPln()),
+          Map.entry("orderId", invoice.getPpobOrderId())
+        )),
+        Map.entry("deliveries", deliveryRepo.findByInvoiceId(invoice.getId()))
       )))
       .orElseGet(() -> ResponseEntity.status(404).body(Map.of("error", "not found")));
   }

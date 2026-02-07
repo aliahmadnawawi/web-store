@@ -8,4 +8,5 @@ import java.util.UUID;
 
 public interface DeliveryRepo extends JpaRepository<Delivery, UUID> {
   List<Delivery> findByInvoiceId(UUID invoiceId);
+  boolean existsByInvoiceId(UUID invoiceId);
 }

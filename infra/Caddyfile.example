@@ -1,0 +1,40 @@
+# Example Caddyfile (host-installed Caddy on Ubuntu)
+#
+# Assumes `infra/docker-compose.app.yml` publishes services on localhost:
+# - web:    127.0.0.1:3000
+# - admin:  127.0.0.1:3100
+# - catalog 127.0.0.1:8081
+# - orders: 127.0.0.1:8082
+# - ai:     127.0.0.1:8000
+#
+# Replace the domains below with your real domains.
+
+sebelasindonesia.app {
+  encode zstd gzip
+  reverse_proxy 127.0.0.1:3000
+}
+
+www.sebelasindonesia.app {
+  redir https://sebelasindonesia.app{uri} permanent
+}
+
+admin.sebelasindonesia.app {
+  encode zstd gzip
+  reverse_proxy 127.0.0.1:3100
+}
+
+api.sebelasindonesia.app {
+  encode zstd gzip
+  reverse_proxy 127.0.0.1:8081
+}
+
+orders.sebelasindonesia.app {
+  encode zstd gzip
+  reverse_proxy 127.0.0.1:8082
+}
+
+ai.sebelasindonesia.app {
+  encode zstd gzip
+  reverse_proxy 127.0.0.1:8000
+}
+

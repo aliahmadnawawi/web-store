@@ -39,24 +39,30 @@ infra/
   docker-compose.app.yml
   app.env.example
 docs/
-  merchant-feed.xml
-
-## Deployment (Docker)
-
-1. Start databases + Redis:
-   - `docker compose -f infra/docker-compose.yml up -d --build`
-2. Copy env template and edit secrets:
-   - `cp infra/app.env.example infra/app.env`
-3. Start app services:
-   - `docker compose --env-file infra/app.env -f infra/docker-compose.app.yml up -d --build`
   api.md
   flows.md
   merchant.md
   security.md
   tripay.md
+  merchant-feed.xml
 tools/
   image-optimizer/ (Sharp-based image to WebP)
 ```
+
+## Deployment (Docker)
+
+1. Start databases + Redis:
+   - `cd infra && docker compose up -d --build`
+2. Copy env template and edit secrets:
+   - `cp app.env.example app.env`
+3. Start app services:
+   - `docker compose --env-file app.env -f docker-compose.app.yml up -d --build`
+
+## Reverse Proxy (Caddy)
+
+If you run Caddy on the VPS host (Ubuntu service, not in Docker), you can reverse-proxy to the Docker-published localhost ports.
+
+- Example config: `infra/Caddyfile.example`
 
 ## Feature Matrix
 

@@ -40,7 +40,7 @@ public class TripayService {
 
   private final RestTemplate rest = new RestTemplate();
 
-  public Map<String, Object> createPayment(String invoiceCode, int amount, CheckoutController.GuestCheckoutRequest request) {
+  public Map<String, Object> createPayment(String invoiceCode, int amount, String itemName, CheckoutController.GuestCheckoutRequest request) {
     loadEnvFallback();
     String signature = sign(merchantCode + invoiceCode + amount, privateKey);
 
@@ -51,7 +51,7 @@ public class TripayService {
     payload.add("customer_name", request.customerName);
     payload.add("customer_email", request.contact.contains("@") ? request.contact : "guest@sebelas.id");
     payload.add("customer_phone", request.contact.contains("@") ? "" : request.contact);
-    payload.add("order_items[0][name]", "Digital Product");
+    payload.add("order_items[0][name]", (itemName == null || itemName.isBlank()) ? "Digital Product" : itemName);
     payload.add("order_items[0][price]", String.valueOf(amount));
     payload.add("order_items[0][quantity]", "1");
     payload.add("callback_url", callbackUrl);

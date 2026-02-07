@@ -1,235 +1,198 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+
 import TopSearchBar from "@/components/TopSearchBar";
 import Carousel from "@/components/Carousel";
 import QuickAccess from "@/components/QuickAccess";
 import BentoGrid from "@/components/BentoGrid";
-import Countdown from "@/components/Countdown";
 import ProductCard from "@/components/ProductCard";
 import Skeleton from "@/components/Skeleton";
 import BottomNav from "@/components/BottomNav";
 import CategoryOverlay from "@/components/CategoryOverlay";
+import { IconBolt, IconGamepad, IconPhone, IconTicket, IconWifi } from "@/components/Icons";
 
-const products = [
-  { name: "Netflix 1 Bulan Premium", desc: "Akun shared legal", price: "Rp 39.000", tag: "Best", hot: true },
-  { name: "Spotify Family 1 Bulan", desc: "Auto delivery", price: "Rp 28.000", tag: "Promo", hot: false },
-  { name: "MLBB 86 Diamonds", desc: "Top up instan", price: "Rp 22.500", tag: "Flash", hot: true },
-  { name: "Pulsa Telkomsel 50K", desc: "24 jam", price: "Rp 51.500", tag: "Hot", hot: false },
-  { name: "Canva Pro 1 Bulan", desc: "Garansi 30 hari", price: "Rp 19.000", tag: "Deal", hot: true },
-];
+const unwrapList = (payload) => {
+  if (!payload) return [];
+  if (Array.isArray(payload.data)) return payload.data;
+  if (payload.data && Array.isArray(payload.data.data)) return payload.data.data;
+  return [];
+};
+
+const normCat = (c) => {
+  const id = c?.category_id || c?.id || c?.categoryId;
+  const name = c?.category_name || c?.name || c?.category || c?.product_name;
+  const type = c?.type || "";
+  return { id: String(id || ""), name: String(name || ""), type: String(type || "") };
+};
+
+const iconFor = (name) => {
+  const n = (name || "").toLowerCase();
+  if (n.includes("pulsa")) return IconPhone;
+  if (n.includes("data")) return IconWifi;
+  if (n.includes("game")) return IconGamepad;
+  if (n.includes("token") || n.includes("pln") || n.includes("listrik")) return IconBolt;
+  if (n.includes("voucher")) return IconTicket;
+  return IconTicket;
+};
 
 export default function HomePage() {
   const [openCategories, setOpenCategories] = useState(false);
-  const [recommendations, setRecommendations] = useState([]);
-  const [loadingRec, setLoadingRec] = useState(true);
-  const [ppobCategories, setPpobCategories] = useState([]);
-  const [ppobProducts, setPpobProducts] = useState([]);
+
+  const [premium, setPremium] = useState([]);
+  const [loadingPremium, setLoadingPremium] = useState(true);
+
+  const [ppobCats, setPpobCats] = useState([]);
   const [loadingPpob, setLoadingPpob] = useState(true);
+
   const [invoiceCode, setInvoiceCode] = useState("");
   const [invoiceStatus, setInvoiceStatus] = useState(null);
+  const [lookupLoading, setLookupLoading] = useState(false);
 
   useEffect(() => {
-    const load = async () => {
+    const loadProducts = async () => {
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_AI_API}/recommendations`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ user_id: null, recent_views: [] }),
-        });
+        const res = await fetch(`${process.env.NEXT_PUBLIC_CATALOG_API}/products?limit=10`, { cache: "no-store" });
         const data = await res.json();
-        setRecommendations(data.items || []);
-      } catch (e) {
-        setRecommendations([]);
+        setPremium(Array.isArray(data?.data) ? data.data : []);
+      } catch {
+        setPremium([]);
       } finally {
-        setLoadingRec(false);
+        setLoadingPremium(false);
       }
     };
-
-    load();
+    loadProducts();
   }, []);
 
   useEffect(() => {
     const loadPpob = async () => {
       try {
-        const [catRes, prodRes] = await Promise.all([
-          fetch(`${process.env.NEXT_PUBLIC_CATALOG_API}/ppob/prepaid/categories`),
-          fetch(`${process.env.NEXT_PUBLIC_CATALOG_API}/ppob/prepaid/products`),
-        ]);
-        const catData = await catRes.json();
-        const prodData = await prodRes.json();
-        setPpobCategories(catData.data || catData?.data?.data || []);
-        setPpobProducts(prodData.data || prodData?.data?.data || []);
-      } catch (e) {
-        setPpobCategories([]);
-        setPpobProducts([]);
+        const res = await fetch(`${process.env.NEXT_PUBLIC_CATALOG_API}/ppob/prepaid/categories`, { cache: "no-store" });
+        const data = await res.json();
+        setPpobCats(unwrapList(data).map(normCat).filter((c) => c.id && c.name).slice(0, 12));
+      } catch {
+        setPpobCats([]);
       } finally {
         setLoadingPpob(false);
       }
     };
-
     loadPpob();
   }, []);
 
+  const lookup = async () => {
+    const code = invoiceCode.trim();
+    if (!code) return;
+    setLookupLoading(true);
+    setInvoiceStatus(null);
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_ORDERS_API}/invoice/lookup/${encodeURIComponent(code)}`, { cache: "no-store" });
+      const data = await res.json().catch(() => ({}));
+      setInvoiceStatus(data?.status || data?.error || "unknown");
+    } catch {
+      setInvoiceStatus("error");
+    } finally {
+      setLookupLoading(false);
+    }
+  };
+
+  const structuredWebsite = useMemo(() => ({
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: "Sebelas Indonesia",
+    url: "https://sebelasindonesia.app",
+    potentialAction: {
+      "@type": "SearchAction",
+      target: "https://sebelasindonesia.app/search?q={search_term_string}",
+      "query-input": "required name=search_term_string",
+    },
+  }), []);
+
   return (
     <div className="min-h-screen pb-24">
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "WebSite",
-            name: "Sebelas Indonesia",
-            url: "https://sebelasindonesia.app",
-            potentialAction: {
-              "@type": "SearchAction",
-              target: "https://sebelasindonesia.app/search?q={search_term_string}",
-              "query-input": "required name=search_term_string",
-            },
-          }),
-        }}
-      />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "BreadcrumbList",
-            itemListElement: [
-              { "@type": "ListItem", position: 1, name: "Home", item: "https://sebelasindonesia.app/" },
-              { "@type": "ListItem", position: 2, name: "Kategori", item: "https://sebelasindonesia.app/categories" },
-            ],
-          }),
-        }}
-      />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "Product",
-            name: "Netflix 1 Bulan Premium",
-            description: "Akun premium legal dengan auto-delivery.",
-            image: "https://sebelasindonesia.app/images/netflix-premium.jpg",
-            offers: {
-              "@type": "Offer",
-              price: "39000",
-              priceCurrency: "IDR",
-              availability: "https://schema.org/InStock",
-              url: "https://sebelasindonesia.app/product/netflix-1-bulan",
-            },
-            identifier_exists: false,
-          }),
-        }}
-      />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredWebsite) }} />
+
       <TopSearchBar onOpenCategories={() => setOpenCategories(true)} />
       <Carousel />
       <QuickAccess />
       <BentoGrid />
 
-      <section className="page-container pt-6" id="ppob">
+      <section className="page-container pt-6">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-lg font-bold font-[var(--font-poppins)]">PPOB Pulsa & Data</h3>
-            <p className="text-xs text-slate-500">Semua produk PPOB dari Tripay</p>
+            <h3 className="text-lg font-bold font-[var(--font-poppins)] text-ink dark:text-slate-100">PPOB</h3>
+            <p className="text-xs text-slate-500 dark:text-slate-300">Pulsa, data, token PLN, game, voucher</p>
           </div>
-          <button className="text-xs font-semibold text-brand">Lihat Semua</button>
+          <Link className="text-xs font-semibold text-brand" href="/ppob">Lihat Semua</Link>
         </div>
-        <div className="mt-3 flex gap-2 overflow-x-auto pb-2">
-          {loadingPpob && Array.from({ length: 6 }).map((_, idx) => (
-            <div key={idx} className="h-8 w-24 animate-pulse rounded-full bg-slate-200 dark:bg-slate-800" />
+        <div className="mt-3 grid grid-cols-4 gap-3 sm:grid-cols-6 md:grid-cols-8">
+          {loadingPpob && Array.from({ length: 8 }).map((_, idx) => (
+            <div key={idx} className="h-20 animate-pulse rounded-2xl bg-white shadow-card dark:bg-slate-900" />
           ))}
-          {!loadingPpob &&
-            ppobCategories.map((cat) => (
-              <span
-                key={cat.id || cat.product_id || cat.name}
-                className="whitespace-nowrap rounded-full bg-soft px-3 py-1 text-xs text-ink dark:bg-slate-800 dark:text-slate-100"
+          {!loadingPpob && ppobCats.map((c) => {
+            const Icon = iconFor(c.name);
+            return (
+              <Link
+                key={c.id}
+                href={`/ppob/prepaid/${c.id}`}
+                className="rounded-2xl border border-slate-100 bg-white p-3 text-center transition active:scale-[0.99] dark:border-slate-800 dark:bg-slate-900"
               >
-                {cat.product_name || cat.name || cat.product || cat.category_name}
-              </span>
-            ))}
-        </div>
-        <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-5">
-          {loadingPpob && Array.from({ length: 5 }).map((_, idx) => <Skeleton key={idx} />)}
-          {!loadingPpob &&
-            ppobProducts.slice(0, 10).map((item) => (
-              <div key={item.code || item.product_id || item.product_name} className="rounded-2xl bg-white p-3 shadow-card dark:bg-slate-900">
-                <div className="text-xs text-slate-500">{item.operator_name || item.operator || item.brand || "PPOB"}</div>
-                <div className="mt-1 text-sm font-semibold text-ink dark:text-slate-100">
-                  {item.product_name || item.name || item.description}
+                <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-2xl bg-soft text-slate-700 dark:bg-slate-800 dark:text-slate-100">
+                  <Icon className="h-5 w-5" />
                 </div>
-                <div className="mt-2 text-sm font-bold text-brand">
-                  {item.price || item.harga || item.product_price || item.selling_price || "Rp -"}
-                </div>
-                <button className="mt-3 w-full rounded-full bg-brand px-3 py-1 text-xs font-semibold text-white transition active:scale-95">
-                  Beli
-                </button>
-              </div>
-            ))}
+                <div className="mt-2 line-clamp-2 text-[11px] font-semibold text-ink dark:text-slate-100">{c.name}</div>
+              </Link>
+            );
+          })}
+          {!loadingPpob && ppobCats.length === 0 ? (
+            <div className="col-span-4 rounded-2xl border border-slate-100 bg-white p-4 text-sm text-slate-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 sm:col-span-6 md:col-span-8">
+              PPOB belum tersedia. Pastikan `TRIPAY_PPOB_API_KEY` sudah di-set di server.
+            </div>
+          ) : null}
         </div>
       </section>
 
-      <section className="page-container pt-5">
+      <section className="page-container pt-6" id="premium">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-lg font-bold font-[var(--font-poppins)]">Flash Sale Digital</h3>
-            <p className="text-xs text-slate-500">Berakhir dalam hitungan detik</p>
+            <h3 className="text-lg font-bold font-[var(--font-poppins)] text-ink dark:text-slate-100">Etalase Premium</h3>
+            <p className="text-xs text-slate-500 dark:text-slate-300">Akun, software, dan jasa</p>
           </div>
-          <Countdown target={new Date(Date.now() + 3 * 60 * 60 * 1000).toISOString()} />
+          <Link className="text-xs font-semibold text-brand" href="/premium">Lihat Semua</Link>
         </div>
         <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-5">
-          {products.map((product) => (
-            <ProductCard key={product.name} product={product} />
-          ))}
+          {loadingPremium && Array.from({ length: 10 }).map((_, idx) => <Skeleton key={idx} />)}
+          {!loadingPremium && premium.map((p) => <ProductCard key={p.id || p.slug} product={p} />)}
+          {!loadingPremium && premium.length === 0 ? (
+            <div className="col-span-2 rounded-2xl border border-slate-100 bg-white p-4 text-sm text-slate-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 md:col-span-5">
+              Produk belum tersedia. Tambahkan lewat Admin Panel.
+            </div>
+          ) : null}
         </div>
       </section>
 
       <section className="page-container pt-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="text-lg font-bold font-[var(--font-poppins)]">Rekomendasi Untukmu</h3>
-            <p className="text-xs text-slate-500">Dipilih oleh AI Sebelas</p>
-          </div>
-          <button className="text-xs font-semibold text-brand">Lihat Semua</button>
-        </div>
-        <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-5">
-          {loadingRec && Array.from({ length: 5 }).map((_, idx) => <Skeleton key={idx} />)}
-          {!loadingRec && recommendations.map((item) => (
-            <ProductCard
-              key={item.id}
-              product={{ name: item.name, desc: "AI pick", price: "Rp 29.000", tag: "AI", hot: false }}
-            />
-          ))}
-        </div>
-      </section>
-
-      <section className="page-container pt-6">
-        <div className="rounded-2xl bg-white p-4 shadow-card">
-          <h3 className="text-lg font-bold font-[var(--font-poppins)]">Lacak Pesanan (Guest)</h3>
-          <p className="text-xs text-slate-500">Masukkan nomor invoice untuk cek status</p>
+        <div className="rounded-2xl bg-white p-4 shadow-card dark:bg-slate-900">
+          <h3 className="text-lg font-bold font-[var(--font-poppins)] text-ink dark:text-slate-100">Lacak Pesanan (Guest)</h3>
+          <p className="text-xs text-slate-500 dark:text-slate-300">Masukkan nomor invoice untuk cek status</p>
           <div className="mt-3 flex gap-2">
             <input
               value={invoiceCode}
               onChange={(e) => setInvoiceCode(e.target.value)}
-              className="flex-1 rounded-xl border border-slate-200 px-3 py-2 text-sm"
-              placeholder="INV-2026-0001"
+              className="flex-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-ink outline-none focus:border-brand dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
+              placeholder="INV-..."
             />
             <button
-              onClick={async () => {
-                try {
-                  const res = await fetch(`${process.env.NEXT_PUBLIC_ORDERS_API}/invoice/lookup/${invoiceCode}`);
-                  const data = await res.json();
-                  setInvoiceStatus(data.status || data.error);
-                } catch (e) {
-                  setInvoiceStatus("error");
-                }
-              }}
-              className="rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-white active:scale-95"
+              onClick={lookup}
+              disabled={lookupLoading}
+              className="rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-white transition disabled:opacity-60 active:scale-[0.99]"
             >
-              Cari
+              {lookupLoading ? "..." : "Cari"}
             </button>
           </div>
-          {invoiceStatus && <p className="mt-2 text-xs text-slate-500">Status: {invoiceStatus}</p>}
+          {invoiceStatus ? (
+            <p className="mt-2 text-xs text-slate-500 dark:text-slate-300">Status: {invoiceStatus}</p>
+          ) : null}
         </div>
       </section>
 
@@ -238,3 +201,4 @@ export default function HomePage() {
     </div>
   );
 }
+

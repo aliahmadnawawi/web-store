@@ -16,6 +16,7 @@ WORKDIR /app
 ENV NODE_ENV=production
 COPY --from=build /app/package*.json ./
 RUN npm install --omit=dev
+COPY --from=build /app/next.config.js ./next.config.js
 COPY --from=build /app/.next ./.next
 COPY --from=build /app/public ./public
 EXPOSE 3000

@@ -27,8 +27,11 @@ import (
 type Product struct {
   ID    string `json:"id" validate:"required"`
   Name  string `json:"name" validate:"required"`
+  Description string `json:"description,omitempty"`
   Price int    `json:"price" validate:"min=0"`
   Slug  string `json:"slug"`
+  Type  string `json:"type,omitempty"`
+  CategoryID int64 `json:"categoryId,omitempty"`
   Image string `json:"image"`
 }
 
@@ -76,6 +79,10 @@ func main() {
         c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid credentials"})
         return
       }
+      if adminKey == "" {
+        c.JSON(http.StatusServiceUnavailable, gin.H{"error": "admin key not configured"})
+        return
+      }
       c.JSON(http.StatusOK, gin.H{"adminKey": adminKey, "role": role})
       return
     }
@@ -88,6 +95,10 @@ func main() {
     }
     if body.Username != expectedUser || body.Password != expectedPass {
       c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid credentials"})
+      return
+    }
+    if adminKey == "" {
+      c.JSON(http.StatusServiceUnavailable, gin.H{"error": "admin key not configured"})
       return
     }
     c.JSON(http.StatusOK, gin.H{"adminKey": adminKey, "role": adminRole})
@@ -583,16 +594,43 @@ func main() {
   })
 
   r.GET("/products", func(c *gin.Context) {
-    ctx := context.Background()
-    cached, err := cache.Get(ctx, "products:list").Result()
-    if err == nil {
-      var items []Product
-      _ = json.Unmarshal([]byte(cached), &items)
-      c.JSON(http.StatusOK, gin.H{"data": items, "cached": true})
-      return
+    q := strings.TrimSpace(c.Query("q"))
+    categoryID := getQueryInt64(c, "categoryId", 0)
+    ptype := strings.TrimSpace(c.Query("type"))
+    limit := getQueryInt(c, "limit", 50)
+    offset := getQueryInt(c, "offset", 0)
+
+    hasFilter := q != "" || categoryID != 0 || ptype != "" || limit != 50 || offset != 0
+    if !hasFilter {
+      ctx := context.Background()
+      cached, err := cache.Get(ctx, "products:list").Result()
+      if err == nil {
+        var items []Product
+        _ = json.Unmarshal([]byte(cached), &items)
+        c.JSON(http.StatusOK, gin.H{"data": items, "cached": true})
+        return
+      }
     }
 
-    rows, err := db.Query("SELECT id, name, price, slug, image_url FROM products WHERE status='ACTIVE' LIMIT 50")
+    sqlQuery := "SELECT id, category_id, name, description, price, slug, type, image_url FROM products WHERE status='ACTIVE'"
+    args := []interface{}{}
+    if categoryID != 0 {
+      sqlQuery += " AND category_id = ?"
+      args = append(args, categoryID)
+    }
+    if ptype != "" {
+      sqlQuery += " AND type = ?"
+      args = append(args, ptype)
+    }
+    if q != "" {
+      sqlQuery += " AND (name LIKE ? OR slug LIKE ? OR description LIKE ?)"
+      like := "%" + q + "%"
+      args = append(args, like, like, like)
+    }
+    sqlQuery += " ORDER BY id DESC LIMIT ? OFFSET ?"
+    args = append(args, limit, offset)
+
+    rows, err := db.Query(sqlQuery, args...)
     if err != nil {
       c.JSON(http.StatusInternalServerError, gin.H{"error": "db"})
       return
@@ -603,23 +641,47 @@ func main() {
     for rows.Next() {
       var id int64
       var p Product
-      _ = rows.Scan(&id, &p.Name, &p.Price, &p.Slug, &p.Image)
+      _ = rows.Scan(&id, &p.CategoryID, &p.Name, &p.Description, &p.Price, &p.Slug, &p.Type, &p.Image)
       p.ID = formatID(id)
       items = append(items, p)
     }
 
-    raw, _ := json.Marshal(items)
-    _ = cache.Set(ctx, "products:list", raw, 2*time.Minute).Err()
+    if !hasFilter {
+      ctx := context.Background()
+      raw, _ := json.Marshal(items)
+      _ = cache.Set(ctx, "products:list", raw, 2*time.Minute).Err()
+      c.JSON(http.StatusOK, gin.H{"data": items, "cached": false})
+      return
+    }
 
-    c.JSON(http.StatusOK, gin.H{"data": items, "cached": false})
+    c.JSON(http.StatusOK, gin.H{"data": items})
+  })
+
+  r.GET("/products/id/:id", func(c *gin.Context) {
+    rawID := c.Param("id")
+    id, err := strconv.ParseInt(rawID, 10, 64)
+    if err != nil || id <= 0 {
+      c.JSON(http.StatusBadRequest, gin.H{"error": "invalid id"})
+      return
+    }
+
+    row := db.QueryRow("SELECT id, category_id, name, description, price, slug, type, image_url FROM products WHERE id = ? LIMIT 1", id)
+    var p Product
+    var internalID int64
+    if err := row.Scan(&internalID, &p.CategoryID, &p.Name, &p.Description, &p.Price, &p.Slug, &p.Type, &p.Image); err != nil {
+      c.JSON(http.StatusNotFound, gin.H{"error": "not found"})
+      return
+    }
+    p.ID = formatID(internalID)
+    c.JSON(http.StatusOK, gin.H{"data": p})
   })
 
   r.GET("/products/:slug", func(c *gin.Context) {
     slug := c.Param("slug")
-    row := db.QueryRow("SELECT id, name, price, slug, image_url FROM products WHERE slug = ?", slug)
+    row := db.QueryRow("SELECT id, category_id, name, description, price, slug, type, image_url FROM products WHERE slug = ? LIMIT 1", slug)
     var id int64
     var p Product
-    if err := row.Scan(&id, &p.Name, &p.Price, &p.Slug, &p.Image); err != nil {
+    if err := row.Scan(&id, &p.CategoryID, &p.Name, &p.Description, &p.Price, &p.Slug, &p.Type, &p.Image); err != nil {
       c.JSON(http.StatusNotFound, gin.H{"error": "not found"})
       return
     }
@@ -825,6 +887,18 @@ func getQueryInt(c *gin.Context, key string, fallback int) int {
     return fallback
   }
   parsed, err := strconv.Atoi(raw)
+  if err != nil {
+    return fallback
+  }
+  return parsed
+}
+
+func getQueryInt64(c *gin.Context, key string, fallback int64) int64 {
+  raw := c.Query(key)
+  if raw == "" {
+    return fallback
+  }
+  parsed, err := strconv.ParseInt(raw, 10, 64)
   if err != nil {
     return fallback
   }

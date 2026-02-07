@@ -23,13 +23,18 @@ export default function TopSearchBar({ onOpenCategories }) {
           </a>
         </nav>
         <div className="flex-1">
-          <label className="flex items-center gap-2 rounded-full bg-soft px-4 py-2 text-sm text-ink dark:bg-slate-800 dark:text-slate-100">
+          <form
+            action="/search"
+            method="get"
+            className="flex items-center gap-2 rounded-full bg-soft px-4 py-2 text-sm text-ink dark:bg-slate-800 dark:text-slate-100"
+          >
             <IconSearch className="h-4 w-4 text-slate-400" />
             <input
+              name="q"
               className="w-full bg-transparent outline-none placeholder:text-slate-400"
-              placeholder="Cari Netflix, Spotify, atau Pulsa"
+              placeholder="Cari Netflix, Spotify, Canva, Pulsa..."
             />
-          </label>
+          </form>
         </div>
         <div className="flex items-center gap-2">
           <a

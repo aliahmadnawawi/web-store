@@ -13,14 +13,26 @@ const buildQuery = (base, params) => {
 };
 
 export default function App() {
-  const [apiUrl, setApiUrl] = useState(localStorage.getItem("adminApiUrl") || "https://api.sebelasindonesia.app");
-  const [ordersApiUrl, setOrdersApiUrl] = useState(localStorage.getItem("ordersApiUrl") || "https://orders.sebelasindonesia.app");
+  const suggested = useMemo(() => {
+    if (typeof window === "undefined") {
+      return { api: "https://api.sebelasindonesia.app", orders: "https://orders.sebelasindonesia.app" };
+    }
+    const host = window.location.hostname || "";
+    if (host.startsWith("admin.")) {
+      const base = host.slice("admin.".length);
+      return { api: `https://api.${base}`, orders: `https://orders.${base}` };
+    }
+    return { api: "https://api.sebelasindonesia.app", orders: "https://orders.sebelasindonesia.app" };
+  }, []);
+
+  const [apiUrl, setApiUrl] = useState(localStorage.getItem("adminApiUrl") || suggested.api);
+  const [ordersApiUrl, setOrdersApiUrl] = useState(localStorage.getItem("ordersApiUrl") || suggested.orders);
   const [adminKey, setAdminKey] = useState(localStorage.getItem("adminKey") || "");
   const [adminRole, setAdminRole] = useState(localStorage.getItem("adminRole") || "editor");
   const [adminUser, setAdminUser] = useState(localStorage.getItem("adminUser") || "admin");
   const [loggedIn, setLoggedIn] = useState(localStorage.getItem("adminLoggedIn") === "true");
   const [lockVisible, setLockVisible] = useState(localStorage.getItem("adminLoggedIn") !== "true");
-  const [loginError, setLoginError] = useState(false);
+  const [loginError, setLoginError] = useState("");
   const [connectionStatus, setConnectionStatus] = useState("Belum login");
 
   const [loginApiUrl, setLoginApiUrl] = useState(apiUrl);
@@ -99,14 +111,14 @@ export default function App() {
       setLoggedIn(true);
       localStorage.setItem("adminLoggedIn", "true");
       setLockVisible(false);
-      setLoginError(false);
+      setLoginError("");
       await loadAll();
     } catch {
       setConnectionStatus("Failed");
       setLoggedIn(false);
       localStorage.setItem("adminLoggedIn", "false");
       setLockVisible(true);
-      setLoginError(true);
+      setLoginError("Koneksi gagal. Pastikan `ADMIN_API_KEY` benar.");
     }
   };
 
@@ -125,8 +137,12 @@ export default function App() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username: loginUsername, password: loginPassword })
       });
-      if (!res.ok) throw new Error("login failed");
-      const data = await res.json();
+      const raw = await res.text();
+      let data = {};
+      try { data = JSON.parse(raw || "{}"); } catch { data = {}; }
+      if (!res.ok) {
+        throw new Error(data.error || data.message || "Login gagal");
+      }
       setApiUrl(loginApiUrl);
       setOrdersApiUrl(loginOrdersApiUrl);
       setAdminKey(data.adminKey || "");
@@ -140,10 +156,10 @@ export default function App() {
       setLoggedIn(true);
       localStorage.setItem("adminLoggedIn", "true");
       setLockVisible(false);
-      setLoginError(false);
+      setLoginError("");
       await testConnection();
-    } catch {
-      setLoginError(true);
+    } catch (e) {
+      setLoginError(e?.message || "Login gagal");
     }
   };
 
@@ -338,7 +354,7 @@ export default function App() {
                 <button className="btn btn-primary w-100" onClick={handleLogin}>Login</button>
               </div>
               <div className="col-12">
-                <div className={`text-danger small ${loginError ? "" : "d-none"}`}>Login gagal. Periksa API URL dan key.</div>
+                <div className={`text-danger small ${loginError ? "" : "d-none"}`}>{loginError}</div>
               </div>
             </div>
           </div>

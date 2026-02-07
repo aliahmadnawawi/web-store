@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { IconBolt, IconGamepad, IconPhone, IconTicket, IconWifi } from "@/components/Icons";
+import PpobShortcuts from "@/components/PpobShortcuts";
 
 const unwrapList = (payload) => {
   if (!payload) return [];
@@ -50,6 +51,8 @@ export default async function PpobPage() {
 
   const prepaidCats = unwrapList(prepaid.data).map(normCat).filter((c) => c.id && c.name);
   const postpaidCats = unwrapList(postpaid.data).map(normCat).filter((c) => c.id && c.name);
+  const prepaidMsg = prepaid?.data && prepaid.data.success === false ? String(prepaid.data.message || "PPOB prabayar belum aktif") : "";
+  const postpaidMsg = postpaid?.data && postpaid.data.success === false ? String(postpaid.data.message || "PPOB pascabayar belum aktif") : "";
 
   return (
     <div className="min-h-screen bg-soft px-6 py-6 dark:bg-slate-950">
@@ -59,8 +62,17 @@ export default async function PpobPage() {
       </div>
       <p className="mt-1 text-sm text-slate-500 dark:text-slate-300">Pilih kategori, lalu masukkan nomor sebelum daftar harga muncul.</p>
 
+      <div className="mt-4">
+        <PpobShortcuts />
+      </div>
+
       <div className="mt-5">
         <h2 className="text-sm font-bold text-ink dark:text-slate-100">Prabayar</h2>
+        {prepaidMsg ? (
+          <div className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 dark:border-amber-900/40 dark:bg-amber-900/10 dark:text-amber-200">
+            {prepaidMsg}
+          </div>
+        ) : null}
         <div className="mt-3 grid grid-cols-4 gap-3 sm:grid-cols-6">
           {prepaidCats.map((c) => (
             <Link
@@ -81,7 +93,7 @@ export default async function PpobPage() {
           ))}
           {prepaidCats.length === 0 ? (
             <div className="col-span-4 rounded-2xl border border-slate-100 bg-white p-4 text-sm text-slate-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 sm:col-span-6">
-              PPOB prabayar belum tersedia. Pastikan `TRIPAY_PPOB_API_KEY` sudah di-set.
+              PPOB prabayar belum tersedia.
             </div>
           ) : null}
         </div>
@@ -89,6 +101,11 @@ export default async function PpobPage() {
 
       <div className="mt-8">
         <h2 className="text-sm font-bold text-ink dark:text-slate-100">Pascabayar</h2>
+        {postpaidMsg ? (
+          <div className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 dark:border-amber-900/40 dark:bg-amber-900/10 dark:text-amber-200">
+            {postpaidMsg}
+          </div>
+        ) : null}
         <div className="mt-3 grid grid-cols-4 gap-3 sm:grid-cols-6">
           {postpaidCats.map((c) => (
             <Link
@@ -109,7 +126,7 @@ export default async function PpobPage() {
           ))}
           {postpaidCats.length === 0 ? (
             <div className="col-span-4 rounded-2xl border border-slate-100 bg-white p-4 text-sm text-slate-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 sm:col-span-6">
-              PPOB pascabayar belum tersedia. Pastikan `TRIPAY_PPOB_API_KEY` sudah di-set.
+              PPOB pascabayar belum tersedia.
             </div>
           ) : null}
         </div>

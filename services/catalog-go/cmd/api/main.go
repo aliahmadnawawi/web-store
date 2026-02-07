@@ -71,13 +71,22 @@ func main() {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid payload"})
 			return
 		}
+		expectedUser := os.Getenv("ADMIN_USERNAME")
+		expectedPass := os.Getenv("ADMIN_PASSWORD")
 		var id int64
 		var hash, role string
 		err := db.QueryRow("SELECT id, password_hash, role FROM admin_users WHERE username = ? LIMIT 1", body.Username).Scan(&id, &hash, &role)
 		if err == nil {
 			if bcrypt.CompareHashAndPassword([]byte(hash), []byte(body.Password)) != nil {
-				c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid credentials"})
-				return
+				// Allow a bootstrap override: if env creds match, sync DB password hash.
+				if expectedUser != "" && expectedPass != "" && body.Username == expectedUser && body.Password == expectedPass {
+					if newHash, err2 := bcrypt.GenerateFromPassword([]byte(body.Password), bcrypt.DefaultCost); err2 == nil {
+						_, _ = db.Exec("UPDATE admin_users SET password_hash = ? WHERE id = ?", string(newHash), id)
+					}
+				} else {
+					c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid credentials"})
+					return
+				}
 			}
 			if adminKey == "" {
 				c.JSON(http.StatusServiceUnavailable, gin.H{"error": "admin key not configured"})
@@ -87,8 +96,6 @@ func main() {
 			return
 		}
 
-		expectedUser := os.Getenv("ADMIN_USERNAME")
-		expectedPass := os.Getenv("ADMIN_PASSWORD")
 		if expectedUser == "" || expectedPass == "" {
 			c.JSON(http.StatusServiceUnavailable, gin.H{"error": "admin credentials not configured"})
 			return

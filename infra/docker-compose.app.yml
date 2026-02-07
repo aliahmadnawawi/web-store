@@ -6,6 +6,8 @@ services:
         NEXT_PUBLIC_CATALOG_API: ${PUBLIC_CATALOG_API}
         NEXT_PUBLIC_ORDERS_API: ${PUBLIC_ORDERS_API}
         NEXT_PUBLIC_AI_API: ${PUBLIC_AI_API}
+        NEXT_PUBLIC_CS_WHATSAPP: ${PUBLIC_CS_WHATSAPP}
+        NEXT_PUBLIC_GOOGLE_CLIENT_ID: ${PUBLIC_GOOGLE_CLIENT_ID}
     container_name: sebelas-web
     ports:
       # Port 3000 is commonly used by other services. Publish the storefront on 3002 by default.
@@ -68,6 +70,7 @@ services:
       TRIPAY_PPOB_BASE_URL: ${TRIPAY_PPOB_BASE_URL}
       TRIPAY_PPOB_PIN: ${TRIPAY_PPOB_PIN}
       JWT_SECRET: ${JWT_SECRET}
+      GOOGLE_CLIENT_ID: ${PUBLIC_GOOGLE_CLIENT_ID}
       CATALOG_API: ${CATALOG_API}
       AI_API: ${AI_API}
       FONNTE_TOKEN: ${FONNTE_TOKEN}
@@ -86,6 +89,8 @@ services:
     build:
       context: ../services/ai-python
     container_name: sebelas-ai
+    environment:
+      CATALOG_API: ${CATALOG_API}
     ports:
       - "127.0.0.1:8000:8000"
     restart: unless-stopped

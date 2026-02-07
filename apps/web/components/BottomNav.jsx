@@ -2,8 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import NotificationDot from "@/components/NotificationDot";
-import { IconCart, IconChat, IconHome, IconUser } from "@/components/Icons";
+import { IconCart, IconHistory, IconHome, IconUser } from "@/components/Icons";
 
 export default function BottomNav() {
   const pathname = usePathname();
@@ -16,14 +15,13 @@ export default function BottomNav() {
           <IconHome className="h-5 w-5" />
           Home
         </Link>
-        <Link href="/chat" className={`flex flex-col items-center gap-1 ${isActive("/chat") ? "text-brand" : ""}`}>
-          <IconChat className="h-5 w-5" />
-          Chat
+        <Link href="/history" className={`flex flex-col items-center gap-1 ${isActive("/history") ? "text-brand" : ""}`}>
+          <IconHistory className="h-5 w-5" />
+          History
         </Link>
         <Link href="/cart" className={`relative flex flex-col items-center gap-1 ${isActive("/cart") ? "text-brand" : ""}`}>
           <IconCart className="h-5 w-5" />
           Cart
-          <NotificationDot />
         </Link>
         <Link href="/profile" className={`flex flex-col items-center gap-1 ${isActive("/profile") ? "text-brand" : ""}`}>
           <IconUser className="h-5 w-5" />

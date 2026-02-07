@@ -14,6 +14,7 @@ export default function InvoicePage({ params }) {
   const [loading, setLoading] = useState(true);
   const [invoice, setInvoice] = useState(null);
   const [error, setError] = useState("");
+  const [copied, setCopied] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -37,6 +38,11 @@ export default function InvoicePage({ params }) {
 
   const status = (invoice?.status || "").toUpperCase();
   const paid = status === "PAID";
+  const payment = invoice?.payment && typeof invoice.payment === "object" ? invoice.payment : {};
+  const payCode = String(payment?.payCode || "").trim();
+  const qrUrl = String(payment?.qrUrl || "").trim();
+  const instructions = Array.isArray(payment?.instructions) ? payment.instructions : [];
+  const expiredTime = Number(payment?.expiredTime) || 0;
 
   const deliveries = useMemo(() => {
     const d = invoice?.deliveries;
@@ -86,15 +92,86 @@ export default function InvoicePage({ params }) {
               </div>
             </div>
 
-            {!paid && invoice.checkoutUrl ? (
-              <a
-                href={invoice.checkoutUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="mt-4 block rounded-xl bg-brand px-5 py-3 text-center text-sm font-semibold text-white transition active:scale-[0.99]"
-              >
-                Bayar Sekarang
-              </a>
+            {!paid ? (
+              <div className="mt-4 rounded-2xl bg-white p-4 shadow-card dark:bg-slate-950">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <div className="text-xs font-semibold text-slate-600 dark:text-slate-300">Pembayaran</div>
+                    <div className="mt-1 text-sm font-semibold text-ink dark:text-slate-100">
+                      {payment?.methodName || payment?.method || "Metode"}
+                    </div>
+                    {expiredTime ? (
+                      <div className="mt-1 text-xs text-slate-500 dark:text-slate-300">
+                        Expired: {new Date(expiredTime * 1000).toLocaleString("id-ID")}
+                      </div>
+                    ) : null}
+                  </div>
+                  {invoice.checkoutUrl ? (
+                    <a
+                      href={invoice.checkoutUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-ink dark:border-slate-800 dark:bg-slate-900 dark:text-slate-100"
+                    >
+                      Link Tripay
+                    </a>
+                  ) : null}
+                </div>
+
+                {payCode ? (
+                  <div className="mt-4 rounded-xl bg-soft px-4 py-3 dark:bg-slate-900">
+                    <div className="text-xs font-semibold text-slate-600 dark:text-slate-300">Kode Pembayaran</div>
+                    <div className="mt-1 flex flex-wrap items-center justify-between gap-2">
+                      <div className="font-mono text-sm font-bold text-ink dark:text-slate-100">{payCode}</div>
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          try {
+                            await navigator.clipboard.writeText(payCode);
+                            setCopied(true);
+                            setTimeout(() => setCopied(false), 900);
+                          } catch {}
+                        }}
+                        className="rounded-lg bg-brand px-3 py-1.5 text-xs font-semibold text-white"
+                      >
+                        {copied ? "Tersalin" : "Copy"}
+                      </button>
+                    </div>
+                  </div>
+                ) : null}
+
+                {qrUrl ? (
+                  <div className="mt-4">
+                    <div className="text-xs font-semibold text-slate-600 dark:text-slate-300">QRIS</div>
+                    <div className="mt-2 overflow-hidden rounded-2xl border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900">
+                      <img src={qrUrl} alt="QRIS" className="mx-auto h-56 w-56 object-contain" />
+                      <div className="mt-2 text-center text-xs text-slate-500 dark:text-slate-300">
+                        Scan QR dengan aplikasi e-wallet/banking yang mendukung QRIS.
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
+
+                {instructions.length ? (
+                  <div className="mt-4">
+                    <div className="text-xs font-semibold text-slate-600 dark:text-slate-300">Cara Bayar</div>
+                    <div className="mt-2 grid gap-3">
+                      {instructions.map((g, idx) => (
+                        <div key={idx} className="rounded-xl border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900">
+                          <div className="text-sm font-semibold text-ink dark:text-slate-100">{g.title || "Instruksi"}</div>
+                          {Array.isArray(g.steps) && g.steps.length ? (
+                            <ol className="mt-2 list-decimal pl-5 text-xs text-slate-600 dark:text-slate-300">
+                              {g.steps.map((s, sIdx) => (
+                                <li key={sIdx} className="mt-1">{s}</li>
+                              ))}
+                            </ol>
+                          ) : null}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+              </div>
             ) : null}
 
             <button
@@ -126,4 +203,3 @@ export default function InvoicePage({ params }) {
     </div>
   );
 }
-

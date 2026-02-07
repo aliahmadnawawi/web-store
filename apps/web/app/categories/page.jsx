@@ -12,7 +12,8 @@ async function getCategories() {
   try {
     const res = await fetch(`${process.env.NEXT_PUBLIC_CATALOG_API}/categories`, { next: { revalidate: 60 } });
     const data = await res.json();
-    return Array.isArray(data?.data) ? data.data : [];
+    const cats = Array.isArray(data?.data) ? data.data : [];
+    return cats.filter((c) => !["game-topup", "e-voucher"].includes(String(c?.slug || "")));
   } catch {
     return [];
   }

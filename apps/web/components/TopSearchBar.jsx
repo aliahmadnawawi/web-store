@@ -1,9 +1,10 @@
 "use client";
 
 import ThemeToggle from "@/components/ThemeToggle";
-import { IconChat, IconSearch } from "@/components/Icons";
+import { IconSearch, IconSparkles, IconWhatsapp } from "@/components/Icons";
 
 export default function TopSearchBar({ onOpenCategories }) {
+  const wa = process.env.NEXT_PUBLIC_CS_WHATSAPP || "https://wa.me/628985228448";
   return (
     <header className="sticky top-0 z-40 border-b border-slate-100 bg-white/80 backdrop-blur-md dark:border-slate-800 dark:bg-slate-950/80">
       <div className="page-container flex items-center gap-3 py-3">
@@ -39,12 +40,19 @@ export default function TopSearchBar({ onOpenCategories }) {
         <div className="flex items-center gap-2">
           <a
             className="flex h-10 w-10 items-center justify-center rounded-full bg-soft text-slate-600 transition active:scale-95 dark:bg-slate-800 dark:text-slate-100"
-            aria-label="Chat CS"
-            href={process.env.NEXT_PUBLIC_CS_WHATSAPP || "https://wa.me/6281234567890"}
+            aria-label="AI Chat"
+            href="/chat"
+          >
+            <IconSparkles className="h-5 w-5" />
+          </a>
+          <a
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-soft text-slate-600 transition active:scale-95 dark:bg-slate-800 dark:text-slate-100"
+            aria-label="Hubungi CS via WhatsApp"
+            href={wa}
             target="_blank"
             rel="noreferrer"
           >
-            <IconChat className="h-5 w-5" />
+            <IconWhatsapp className="h-5 w-5" />
           </a>
           <ThemeToggle />
         </div>

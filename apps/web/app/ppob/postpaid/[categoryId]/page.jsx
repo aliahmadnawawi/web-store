@@ -49,6 +49,11 @@ export default function PpobPostpaidCategoryPage({ params }) {
           catRes.json().catch(() => ({})),
           prodRes.json().catch(() => ({})),
         ]);
+        const anyMsg =
+          (catData && catData.success === false && catData.message) ||
+          (prodData && prodData.success === false && prodData.message) ||
+          "";
+        if (anyMsg) throw new Error(String(anyMsg));
         if (!mounted) return;
         const cats = unwrapList(catData);
         const cat = cats.find((c) => String(c?.category_id || c?.id) === String(categoryId)) || null;
@@ -199,4 +204,3 @@ export default function PpobPostpaidCategoryPage({ params }) {
     </div>
   );
 }
-

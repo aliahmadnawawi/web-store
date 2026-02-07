@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { addToCart } from "@/lib/cart";
+import { getSession } from "@/lib/session";
 
 const formatIdr = (value) => {
   const n = typeof value === "number" ? value : Number(String(value || "").replace(/[^0-9]/g, ""));
@@ -22,6 +24,11 @@ export default function ProductDetailPage({ params }) {
   const [paymentMethod, setPaymentMethod] = useState("BRIVA");
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [checkoutError, setCheckoutError] = useState("");
+  const [isMember, setIsMember] = useState(false);
+
+  useEffect(() => {
+    setIsMember(Boolean(getSession().token));
+  }, []);
 
   useEffect(() => {
     let mounted = true;
@@ -163,18 +170,39 @@ export default function ProductDetailPage({ params }) {
 
                 {checkoutError ? <div className="rounded-xl bg-danger/10 px-3 py-2 text-xs text-danger">{checkoutError}</div> : null}
 
+              <button
+                onClick={doCheckout}
+                disabled={!canCheckout || checkoutLoading}
+                className="rounded-xl bg-brand px-5 py-3 text-sm font-semibold text-white transition disabled:opacity-60 active:scale-[0.99]"
+              >
+                {checkoutLoading ? "Memproses..." : "Beli Sekarang"}
+              </button>
+              {isMember ? (
                 <button
-                  onClick={doCheckout}
-                  disabled={!canCheckout || checkoutLoading}
-                  className="rounded-xl bg-brand px-5 py-3 text-sm font-semibold text-white transition disabled:opacity-60 active:scale-[0.99]"
+                  type="button"
+                  onClick={() => {
+                    if (!product?.id) return;
+                    addToCart(product.id, 1);
+                    router.push("/cart");
+                  }}
+                  disabled={!product?.id}
+                  className="rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-ink transition active:scale-[0.99] dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
                 >
-                  {checkoutLoading ? "Memproses..." : "Beli Sekarang"}
+                  Tambah ke Keranjang
                 </button>
-                <p className="text-xs text-slate-500 dark:text-slate-300">
-                  Setelah checkout, kamu akan diarahkan ke halaman invoice untuk melanjutkan pembayaran.
-                </p>
-              </div>
-            </>
+              ) : (
+                <Link
+                  href="/login"
+                  className="rounded-xl border border-slate-200 bg-white px-5 py-3 text-center text-sm font-semibold text-ink transition active:scale-[0.99] dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100"
+                >
+                  Login untuk Keranjang
+                </Link>
+              )}
+              <p className="text-xs text-slate-500 dark:text-slate-300">
+                Setelah checkout, kamu akan diarahkan ke halaman invoice untuk melanjutkan pembayaran.
+              </p>
+            </div>
+          </>
           ) : (
             <div className="rounded-xl bg-danger/10 px-3 py-2 text-sm text-danger">{error || "Produk tidak tersedia"}</div>
           )}

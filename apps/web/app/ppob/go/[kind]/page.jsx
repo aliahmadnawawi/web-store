@@ -23,6 +23,9 @@ const normalizeKind = (raw) => {
   if (k === "topup" || k === "top-up" || k === "top_up") return "game";
   if (k === "paket-data" || k === "paket_data") return "data";
   if (k === "listrik") return "pln";
+  if (k === "google-play" || k === "google_play" || k === "gplay") return "googleplay";
+  if (k === "pln-pasca" || k === "pln_pasca" || k === "pln-pascabayar" || k === "pln_pascabayar") return "plnpostpaid";
+  if (k === "tagihan" || k === "pascabayar") return "postpaid";
   return k;
 };
 
@@ -31,8 +34,14 @@ const RULES = {
   data: { keywords: ["data", "paket data", "internet"], prefer: "prepaid" },
   game: { keywords: ["game", "topup", "top up", "diamond", "uc"], prefer: "prepaid" },
   pln: { keywords: ["pln", "token", "listrik"], prefer: "prepaid" },
+  plnpostpaid: { keywords: ["pln", "listrik", "tagihan", "pascabayar"], prefer: "postpaid" },
   wifi: { keywords: ["wifi", "internet", "indihome", "first media"], prefer: "postpaid" },
   voucher: { keywords: ["voucher", "e-voucher", "evoucher"], prefer: "prepaid" },
+  googleplay: { keywords: ["google play", "googleplay", "gplay"], prefer: "prepaid" },
+  bpjs: { keywords: ["bpjs"], prefer: "postpaid" },
+  pdam: { keywords: ["pdam", "air"], prefer: "postpaid" },
+  telkom: { keywords: ["telkom", "telepon rumah", "indihome"], prefer: "postpaid" },
+  postpaid: { keywords: ["tagihan", "pascabayar", "pembayaran"], prefer: "postpaid" },
 };
 
 const scoreCategory = (cat, kind) => {
@@ -88,4 +97,3 @@ export default async function PpobGoPage({ params }) {
 
   redirect(`/ppob/${best.cat.mode}/${best.cat.id}`);
 }
-

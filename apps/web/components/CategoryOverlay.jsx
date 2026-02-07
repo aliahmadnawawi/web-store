@@ -16,7 +16,8 @@ export default function CategoryOverlay({ open, onClose }) {
         const res = await fetch(`${process.env.NEXT_PUBLIC_CATALOG_API}/categories`, { cache: "no-store" });
         const data = await res.json();
         if (!mounted) return;
-        setCategories(Array.isArray(data?.data) ? data.data : []);
+        const cats = Array.isArray(data?.data) ? data.data : [];
+        setCategories(cats.filter((c) => !["game-topup", "e-voucher"].includes(String(c?.slug || ""))));
       } catch {
         if (!mounted) return;
         setCategories([]);

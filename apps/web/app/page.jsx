@@ -12,6 +12,10 @@ import Skeleton from "@/components/Skeleton";
 import BottomNav from "@/components/BottomNav";
 import CategoryOverlay from "@/components/CategoryOverlay";
 import { IconBolt, IconGamepad, IconPhone, IconTicket, IconWifi } from "@/components/Icons";
+import PpobShortcuts from "@/components/PpobShortcuts";
+import { getSession } from "@/lib/session";
+
+const EXCLUDED_CATEGORY_SLUGS = new Set(["game-topup", "e-voucher"]);
 
 const unwrapList = (payload) => {
   if (!payload) return [];
@@ -46,6 +50,7 @@ export default function HomePage() {
 
   const [ppobCats, setPpobCats] = useState([]);
   const [loadingPpob, setLoadingPpob] = useState(true);
+  const [ppobMessage, setPpobMessage] = useState("");
 
   const [invoiceCode, setInvoiceCode] = useState("");
   const [invoiceStatus, setInvoiceStatus] = useState(null);
@@ -54,9 +59,36 @@ export default function HomePage() {
   useEffect(() => {
     const loadProducts = async () => {
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_CATALOG_API}/products?limit=10`, { cache: "no-store" });
+        const base = process.env.NEXT_PUBLIC_CATALOG_API;
+        const [catsRes, aiRes] = await Promise.all([
+          fetch(`${base}/categories`, { cache: "no-store" }).then((r) => r.json()).catch(() => ({})),
+          fetch(`${process.env.NEXT_PUBLIC_AI_API}/recommendations`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ user_id: getSession().userId || null, recent_views: [] }),
+            cache: "no-store",
+          }).then((r) => r.json()).catch(() => ({})),
+        ]);
+
+        const cats = Array.isArray(catsRes?.data) ? catsRes.data : [];
+        const excludedIds = new Set(
+          cats
+            .filter((c) => EXCLUDED_CATEGORY_SLUGS.has(String(c?.slug || "")))
+            .map((c) => Number(c?.id))
+            .filter((n) => Number.isFinite(n) && n > 0)
+        );
+
+        const aiItems = Array.isArray(aiRes?.items) ? aiRes.items : [];
+        const filteredAi = aiItems.filter((p) => !excludedIds.has(Number(p?.categoryId)));
+        if (filteredAi.length) {
+          setPremium(filteredAi.slice(0, 10));
+          return;
+        }
+
+        const res = await fetch(`${base}/products?limit=30`, { cache: "no-store" });
         const data = await res.json();
-        setPremium(Array.isArray(data?.data) ? data.data : []);
+        const list = Array.isArray(data?.data) ? data.data : [];
+        setPremium(list.filter((p) => !excludedIds.has(Number(p?.categoryId))).slice(0, 10));
       } catch {
         setPremium([]);
       } finally {
@@ -71,8 +103,15 @@ export default function HomePage() {
       try {
         const res = await fetch(`${process.env.NEXT_PUBLIC_CATALOG_API}/ppob/prepaid/categories`, { cache: "no-store" });
         const data = await res.json();
-        setPpobCats(unwrapList(data).map(normCat).filter((c) => c.id && c.name).slice(0, 12));
+        if (data && data.success === false) {
+          setPpobMessage(String(data.message || "PPOB belum aktif"));
+          setPpobCats([]);
+        } else {
+          setPpobMessage("");
+          setPpobCats(unwrapList(data).map(normCat).filter((c) => c.id && c.name).slice(0, 12));
+        }
       } catch {
+        setPpobMessage("Gagal memuat PPOB. Coba lagi nanti.");
         setPpobCats([]);
       } finally {
         setLoadingPpob(false);
@@ -163,6 +202,11 @@ export default function HomePage() {
           </div>
           <Link className="text-xs font-semibold text-brand" href="/ppob">Lihat Semua</Link>
         </div>
+        {ppobMessage ? (
+          <div className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 dark:border-amber-900/40 dark:bg-amber-900/10 dark:text-amber-200">
+            {ppobMessage}
+          </div>
+        ) : null}
         <div className="mt-3 grid grid-cols-4 gap-3 sm:grid-cols-6 md:grid-cols-8">
           {loadingPpob && Array.from({ length: 8 }).map((_, idx) => (
             <div key={idx} className="h-20 animate-pulse rounded-2xl bg-white shadow-card dark:bg-slate-900" />
@@ -183,8 +227,8 @@ export default function HomePage() {
             );
           })}
           {!loadingPpob && ppobCats.length === 0 ? (
-            <div className="col-span-4 rounded-2xl border border-slate-100 bg-white p-4 text-sm text-slate-500 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 sm:col-span-6 md:col-span-8">
-              PPOB belum tersedia. Pastikan `TRIPAY_PPOB_API_KEY` sudah di-set di server.
+            <div className="col-span-4 sm:col-span-6 md:col-span-8">
+              <PpobShortcuts title="PPOB Cepat" subtitle="Klik icon, lalu isi nomor/ID dulu sebelum daftar harga muncul." />
             </div>
           ) : null}
         </div>

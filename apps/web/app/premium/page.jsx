@@ -1,13 +1,15 @@
 import Link from "next/link";
 import ProductCard from "@/components/ProductCard";
 
-async function getProducts() {
+const EXCLUDED_CATEGORY_SLUGS = new Set(["game-topup", "e-voucher"]);
+
+async function getJson(url) {
   try {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_CATALOG_API}/products?limit=50`, { cache: "no-store" });
+    const res = await fetch(url, { cache: "no-store" });
     const data = await res.json();
-    return Array.isArray(data?.data) ? data.data : [];
+    return { ok: res.ok, data };
   } catch {
-    return [];
+    return { ok: false, data: null };
   }
 }
 
@@ -18,7 +20,25 @@ export const metadata = {
 };
 
 export default async function PremiumPage() {
-  const products = await getProducts();
+  const base = process.env.NEXT_PUBLIC_CATALOG_API;
+  const [catsRes, prodRes] = await Promise.all([
+    getJson(`${base}/categories`),
+    getJson(`${base}/products?limit=80`),
+  ]);
+
+  const cats = Array.isArray(catsRes?.data?.data) ? catsRes.data.data : [];
+  const excludedIds = new Set(
+    cats
+      .filter((c) => EXCLUDED_CATEGORY_SLUGS.has(String(c?.slug || "")))
+      .map((c) => Number(c?.id))
+      .filter((n) => Number.isFinite(n) && n > 0)
+  );
+
+  const rawProducts = Array.isArray(prodRes?.data?.data) ? prodRes.data.data : [];
+  const products = rawProducts.filter((p) => {
+    const cid = Number(p?.categoryId);
+    return !excludedIds.has(cid);
+  });
 
   return (
     <div className="min-h-screen bg-soft px-6 py-6 dark:bg-slate-950">
@@ -41,4 +61,3 @@ export default async function PremiumPage() {
     </div>
   );
 }
-

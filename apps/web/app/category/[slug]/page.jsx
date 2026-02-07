@@ -1,5 +1,6 @@
 import Link from "next/link";
 import ProductCard from "@/components/ProductCard";
+import { redirect } from "next/navigation";
 
 async function getCategories() {
   try {
@@ -32,6 +33,8 @@ export async function generateMetadata({ params }) {
 
 export default async function CategorySlugPage({ params }) {
   const slug = params.slug;
+  if (slug === "game-topup") redirect("/ppob/go/game");
+  if (slug === "e-voucher") redirect("/ppob/go/voucher");
   const categories = await getCategories();
   const cat = categories.find((c) => c.slug === slug);
   const products = cat?.id ? await getProducts(cat.id) : [];
@@ -64,4 +67,3 @@ export default async function CategorySlugPage({ params }) {
     </div>
   );
 }
-

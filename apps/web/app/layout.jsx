@@ -1,5 +1,6 @@
 import "./globals.css";
 import { Inter, Poppins } from "next/font/google";
+import Script from "next/script";
 import ServiceWorker from "@/components/ServiceWorker";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
@@ -32,10 +33,26 @@ export const viewport = {
   initialScale: 1,
 };
 
+const themeInitScript = `
+(() => {
+  try {
+    const stored = localStorage.getItem("theme");
+    const theme =
+      stored === "dark" || stored === "light"
+        ? stored
+        : (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+    document.documentElement.classList.toggle("dark", theme === "dark");
+  } catch (_) {}
+})();
+`;
+
 export default function RootLayout({ children }) {
   return (
-    <html lang="id" className={`${inter.variable} ${poppins.variable}`}>
+    <html lang="id" className={`${inter.variable} ${poppins.variable}`} suppressHydrationWarning>
       <body className="font-[var(--font-inter)]">
+        <Script id="theme-init" strategy="beforeInteractive">
+          {themeInitScript}
+        </Script>
         {children}
         <ServiceWorker />
       </body>

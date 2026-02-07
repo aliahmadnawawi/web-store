@@ -40,6 +40,66 @@ export function IconChat({ className }) {
   );
 }
 
+export function IconHistory({ className }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path
+        d="M4 12a8 8 0 1 0 3-6.2"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path d="M4 4v4h4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M12 8v4l3 2" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+export function IconSparkles({ className }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path
+        d="M12 2l1.2 4.4L17 7.6l-3.8 1.2L12 13l-1.2-4.2L7 7.6l3.8-1.2L12 2Z"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M19 12l.6 2.1L22 15l-2.4.9L19 18l-.6-2.1L16 15l2.4-.9L19 12Z"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M4 13l.6 2.1L7 16l-2.4.9L4 19l-.6-2.1L1 16l2.4-.9L4 13Z"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+export function IconWhatsapp({ className }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path
+        d="M12 21a9 9 0 1 0-7.5-4L4 21l4-1.2A8.9 8.9 0 0 0 12 21Z"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M9.2 8.5c.3-.6.6-.6 1.1-.5l.8.2c.2.1.4.2.5.4l.4.9c.1.2.1.4 0 .6l-.3.8c-.1.2 0 .5.2.7.6.8 1.3 1.5 2.1 2.1.2.2.5.3.7.2l.8-.3c.2-.1.4-.1.6 0l.9.4c.2.1.3.3.4.5l.2.8c.1.5.1.8-.5 1.1-.5.3-1.2.5-1.8.4-3.2-.7-5.8-3.3-6.5-6.5-.1-.6.1-1.3.4-1.8Z"
+        stroke="currentColor"
+        strokeWidth="1.2"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 export function IconCart({ className }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="none" aria-hidden="true">

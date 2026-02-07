@@ -42,6 +42,7 @@ public class TripayService {
 
   public Map<String, Object> createPayment(String invoiceCode, int amount, String itemName, CheckoutController.GuestCheckoutRequest request) {
     loadEnvFallback();
+    requireConfigured();
     String signature = sign(merchantCode + invoiceCode + amount, privateKey);
 
     MultiValueMap<String, String> payload = new LinkedMultiValueMap<>();
@@ -67,7 +68,26 @@ public class TripayService {
       headers.set("Authorization", "Bearer ");
     }
 
-    return rest.postForObject(baseUrl + "/transaction/create", new HttpEntity<>(payload, headers), Map.class);
+    try {
+      return rest.postForObject(baseUrl + "/transaction/create", new HttpEntity<>(payload, headers), Map.class);
+    } catch (Exception e) {
+      throw new IllegalStateException("tripay unavailable");
+    }
+  }
+
+  private void requireConfigured() {
+    if (apiKey == null || apiKey.isBlank()) {
+      throw new IllegalStateException("tripay api key not configured");
+    }
+    if (merchantCode == null || merchantCode.isBlank()) {
+      throw new IllegalStateException("tripay merchant code not configured");
+    }
+    if (privateKey == null || privateKey.isBlank()) {
+      throw new IllegalStateException("tripay private key not configured");
+    }
+    if (baseUrl == null || baseUrl.isBlank()) {
+      throw new IllegalStateException("tripay base url not configured");
+    }
   }
 
   private void loadEnvFallback() {

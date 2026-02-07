@@ -19,6 +19,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.security.SecureRandom;
 import java.time.Instant;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
 
@@ -103,22 +104,32 @@ public class PpobCheckoutController {
     pg.deviceFingerprint = request.deviceFingerprint;
     pg.attempts = request.attempts;
 
-    Map<String, Object> payment = tripayService.createPayment(invoice.getInvoiceCode(), invoice.getAmount(), invoice.getProductName(), pg);
+    Map<String, Object> payment;
+    try {
+      payment = tripayService.createPayment(invoice.getInvoiceCode(), invoice.getAmount(), invoice.getProductName(), pg);
+    } catch (Exception e) {
+      return ResponseEntity.status(503).body(Map.of("error", e.getMessage() == null ? "tripay unavailable" : e.getMessage()));
+    }
+    if (payment == null) {
+      payment = Map.of();
+    }
     String checkoutUrl = extractCheckoutUrl(payment);
     invoice.setPaymentRaw(safeJson(payment));
     invoice.setPaymentCheckoutUrl(checkoutUrl);
     invoiceRepo.save(invoice);
 
     Double risk = fraudClient.score(invoice.getInvoiceCode(), invoice.getAmount(), request.deviceFingerprint, request.attempts);
-    return ResponseEntity.ok(Map.ofEntries(
-      Map.entry("invoiceId", invoice.getInvoiceCode()),
-      Map.entry("invoiceUrl", "https://sebelasindonesia.app/invoice/" + invoice.getToken()),
-      Map.entry("baseAmount", invoice.getBaseAmount()),
-      Map.entry("amount", invoice.getAmount()),
-      Map.entry("checkoutUrl", checkoutUrl),
-      Map.entry("payment", payment),
-      Map.entry("fraudRisk", risk)
-    ));
+    Map<String, Object> resp = new LinkedHashMap<>();
+    resp.put("invoiceId", invoice.getInvoiceCode());
+    resp.put("invoiceUrl", "https://sebelasindonesia.app/invoice/" + invoice.getToken());
+    resp.put("baseAmount", invoice.getBaseAmount());
+    resp.put("amount", invoice.getAmount());
+    resp.put("checkoutUrl", checkoutUrl);
+    resp.put("payment", payment);
+    if (risk != null) {
+      resp.put("fraudRisk", risk);
+    }
+    return ResponseEntity.ok(resp);
   }
 
   @PostMapping("/postpaid")
@@ -169,26 +180,37 @@ public class PpobCheckoutController {
     pg.deviceFingerprint = request.deviceFingerprint;
     pg.attempts = request.attempts;
 
-    Map<String, Object> payment = tripayService.createPayment(invoice.getInvoiceCode(), invoice.getAmount(), invoice.getProductName(), pg);
+    Map<String, Object> payment;
+    try {
+      payment = tripayService.createPayment(invoice.getInvoiceCode(), invoice.getAmount(), invoice.getProductName(), pg);
+    } catch (Exception e) {
+      return ResponseEntity.status(503).body(Map.of("error", e.getMessage() == null ? "tripay unavailable" : e.getMessage()));
+    }
+    if (payment == null) {
+      payment = Map.of();
+    }
     String checkoutUrl = extractCheckoutUrl(payment);
     invoice.setPaymentRaw(safeJson(payment));
     invoice.setPaymentCheckoutUrl(checkoutUrl);
     invoiceRepo.save(invoice);
 
     Double risk = fraudClient.score(invoice.getInvoiceCode(), invoice.getAmount(), request.deviceFingerprint, request.attempts);
-    return ResponseEntity.ok(Map.ofEntries(
-      Map.entry("invoiceId", invoice.getInvoiceCode()),
-      Map.entry("invoiceUrl", "https://sebelasindonesia.app/invoice/" + invoice.getToken()),
-      Map.entry("baseAmount", invoice.getBaseAmount()),
-      Map.entry("amount", invoice.getAmount()),
-      Map.entry("bill", Map.ofEntries(
-        Map.entry("customerName", bill.customerName()),
-        Map.entry("orderId", bill.orderId())
-      )),
-      Map.entry("checkoutUrl", checkoutUrl),
-      Map.entry("payment", payment),
-      Map.entry("fraudRisk", risk)
-    ));
+    Map<String, Object> billOut = new LinkedHashMap<>();
+    billOut.put("customerName", bill.customerName());
+    billOut.put("orderId", bill.orderId());
+
+    Map<String, Object> resp = new LinkedHashMap<>();
+    resp.put("invoiceId", invoice.getInvoiceCode());
+    resp.put("invoiceUrl", "https://sebelasindonesia.app/invoice/" + invoice.getToken());
+    resp.put("baseAmount", invoice.getBaseAmount());
+    resp.put("amount", invoice.getAmount());
+    resp.put("bill", billOut);
+    resp.put("checkoutUrl", checkoutUrl);
+    resp.put("payment", payment);
+    if (risk != null) {
+      resp.put("fraudRisk", risk);
+    }
+    return ResponseEntity.ok(resp);
   }
 
   private String resolvePhone(String inquiry, String customerNumber, String phone) {

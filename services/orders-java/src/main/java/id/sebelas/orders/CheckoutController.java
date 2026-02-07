@@ -11,6 +11,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 @RestController
@@ -31,43 +32,63 @@ public class CheckoutController {
   public ResponseEntity<?> guestCheckout(@Valid @RequestBody GuestCheckoutRequest request) {
     Invoice invoice = invoiceService.createGuestInvoice(request.productId, request.contact);
 
-    Map<String, Object> payment = tripayService.createPayment(invoice.getInvoiceCode(), invoice.getAmount(), invoice.getProductName(), request);
+    Map<String, Object> payment;
+    try {
+      payment = tripayService.createPayment(invoice.getInvoiceCode(), invoice.getAmount(), invoice.getProductName(), request);
+    } catch (Exception e) {
+      return ResponseEntity.status(503).body(Map.of("error", e.getMessage() == null ? "tripay unavailable" : e.getMessage()));
+    }
+    if (payment == null) {
+      payment = Map.of();
+    }
     String paymentRaw = safeJson(payment);
     String checkoutUrl = extractCheckoutUrl(payment);
     invoiceService.recordPayment(invoice, paymentRaw, checkoutUrl);
 
     Double risk = fraudClient.score(invoice.getInvoiceCode(), invoice.getAmount(), request.deviceFingerprint, request.attempts);
-    return ResponseEntity.ok(Map.of(
-      "invoiceId", invoice.getInvoiceCode(),
-      "invoiceUrl", "https://sebelasindonesia.app/invoice/" + invoice.getToken(),
-      "contact", invoice.getContact(),
-      "baseAmount", invoice.getBaseAmount(),
-      "amount", invoice.getAmount(),
-      "checkoutUrl", checkoutUrl,
-      "payment", payment,
-      "fraudRisk", risk
-    ));
+    Map<String, Object> resp = new LinkedHashMap<>();
+    resp.put("invoiceId", invoice.getInvoiceCode());
+    resp.put("invoiceUrl", "https://sebelasindonesia.app/invoice/" + invoice.getToken());
+    resp.put("contact", invoice.getContact());
+    resp.put("baseAmount", invoice.getBaseAmount());
+    resp.put("amount", invoice.getAmount());
+    resp.put("checkoutUrl", checkoutUrl);
+    resp.put("payment", payment);
+    if (risk != null) {
+      resp.put("fraudRisk", risk);
+    }
+    return ResponseEntity.ok(resp);
   }
 
   @PostMapping("/member")
   public ResponseEntity<?> memberCheckout(@Valid @RequestBody MemberCheckoutRequest request) {
     Invoice invoice = invoiceService.createMemberInvoice(request.productId, request.memberId);
-    Map<String, Object> payment = tripayService.createPayment(invoice.getInvoiceCode(), invoice.getAmount(), invoice.getProductName(), request.toGuest());
+    Map<String, Object> payment;
+    try {
+      payment = tripayService.createPayment(invoice.getInvoiceCode(), invoice.getAmount(), invoice.getProductName(), request.toGuest());
+    } catch (Exception e) {
+      return ResponseEntity.status(503).body(Map.of("error", e.getMessage() == null ? "tripay unavailable" : e.getMessage()));
+    }
+    if (payment == null) {
+      payment = Map.of();
+    }
     String paymentRaw = safeJson(payment);
     String checkoutUrl = extractCheckoutUrl(payment);
     invoiceService.recordPayment(invoice, paymentRaw, checkoutUrl);
 
     Double risk = fraudClient.score(invoice.getInvoiceCode(), invoice.getAmount(), request.deviceFingerprint, request.attempts);
-    return ResponseEntity.ok(Map.of(
-      "invoiceId", invoice.getInvoiceCode(),
-      "invoiceUrl", "https://sebelasindonesia.app/invoice/" + invoice.getToken(),
-      "memberId", request.memberId,
-      "baseAmount", invoice.getBaseAmount(),
-      "amount", invoice.getAmount(),
-      "checkoutUrl", checkoutUrl,
-      "payment", payment,
-      "fraudRisk", risk
-    ));
+    Map<String, Object> resp = new LinkedHashMap<>();
+    resp.put("invoiceId", invoice.getInvoiceCode());
+    resp.put("invoiceUrl", "https://sebelasindonesia.app/invoice/" + invoice.getToken());
+    resp.put("memberId", request.memberId);
+    resp.put("baseAmount", invoice.getBaseAmount());
+    resp.put("amount", invoice.getAmount());
+    resp.put("checkoutUrl", checkoutUrl);
+    resp.put("payment", payment);
+    if (risk != null) {
+      resp.put("fraudRisk", risk);
+    }
+    return ResponseEntity.ok(resp);
   }
 
   private String safeJson(Object v) {

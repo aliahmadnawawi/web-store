@@ -40,7 +40,8 @@ services:
       ADMIN_PASSWORD: ${ADMIN_PASSWORD}
       LOW_STOCK_THRESHOLD: ${LOW_STOCK_THRESHOLD}
     ports:
-      - "127.0.0.1:8081:8081"
+      # Host port 8081 is commonly used by other services (e.g. PowerDNS), so we publish catalog on 8083 by default.
+      - "127.0.0.1:8083:8081"
     restart: unless-stopped
     networks:
       - infra_default

@@ -3,7 +3,7 @@
 # Assumes `infra/docker-compose.app.yml` publishes services on localhost:
 # - web:    127.0.0.1:3000
 # - admin:  127.0.0.1:3100
-# - catalog 127.0.0.1:8081
+# - catalog 127.0.0.1:8083
 # - orders: 127.0.0.1:8082
 # - ai:     127.0.0.1:8000
 #
@@ -25,7 +25,7 @@ admin.sebelasindonesia.app {
 
 api.sebelasindonesia.app {
   encode zstd gzip
-  reverse_proxy 127.0.0.1:8081
+  reverse_proxy 127.0.0.1:8083
 }
 
 orders.sebelasindonesia.app {
@@ -37,4 +37,3 @@ ai.sebelasindonesia.app {
   encode zstd gzip
   reverse_proxy 127.0.0.1:8000
 }
-

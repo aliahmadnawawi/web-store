@@ -33,6 +33,7 @@ const iconFor = (name) => {
   if (n.includes("data")) return IconWifi;
   if (n.includes("game")) return IconGamepad;
   if (n.includes("token") || n.includes("pln") || n.includes("listrik")) return IconBolt;
+  if (n.includes("wifi") || n.includes("internet")) return IconWifi;
   if (n.includes("voucher")) return IconTicket;
   return IconTicket;
 };
@@ -116,6 +117,43 @@ export default function HomePage() {
       <Carousel />
       <QuickAccess />
       <BentoGrid />
+
+      <section className="page-container pt-6" id="promo">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-lg font-bold font-[var(--font-poppins)] text-ink dark:text-slate-100">Promo Hari Ini</h3>
+            <p className="text-xs text-slate-500 dark:text-slate-300">Pilih yang kamu butuh, langsung checkout</p>
+          </div>
+          <Link className="text-xs font-semibold text-brand" href="/premium">Lihat</Link>
+        </div>
+
+        <div className="mt-3 grid gap-3 sm:grid-cols-3">
+          <Link
+            href="/premium"
+            className="rounded-2xl bg-white p-4 shadow-card transition hover:-translate-y-0.5 dark:bg-slate-900"
+          >
+            <div className="text-xs font-semibold text-brand">Flash Sale</div>
+            <div className="mt-1 text-sm font-bold text-ink dark:text-slate-100">Akun Premium</div>
+            <div className="mt-1 text-xs text-slate-500 dark:text-slate-300">Netflix, Spotify, Canva</div>
+          </Link>
+          <Link
+            href="/ppob/go/game"
+            className="rounded-2xl bg-white p-4 shadow-card transition hover:-translate-y-0.5 dark:bg-slate-900"
+          >
+            <div className="text-xs font-semibold text-brand">Top Up</div>
+            <div className="mt-1 text-sm font-bold text-ink dark:text-slate-100">Game</div>
+            <div className="mt-1 text-xs text-slate-500 dark:text-slate-300">MLBB, FF, Valorant</div>
+          </Link>
+          <Link
+            href="/ppob/go/pln"
+            className="rounded-2xl bg-white p-4 shadow-card transition hover:-translate-y-0.5 dark:bg-slate-900"
+          >
+            <div className="text-xs font-semibold text-brand">Tagihan</div>
+            <div className="mt-1 text-sm font-bold text-ink dark:text-slate-100">Token PLN</div>
+            <div className="mt-1 text-xs text-slate-500 dark:text-slate-300">Isi ID, pilih nominal</div>
+          </Link>
+        </div>
+      </section>
 
       <section className="page-container pt-6">
         <div className="flex items-center justify-between">
@@ -201,4 +239,3 @@ export default function HomePage() {
     </div>
   );
 }
-

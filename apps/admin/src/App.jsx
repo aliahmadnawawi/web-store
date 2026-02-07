@@ -2,6 +2,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 
 const pageSize = 50;
 
+const normalizeBaseUrl = (raw) => String(raw || "").trim().replace(/\/+$/, "");
+
 const buildQuery = (base, params) => {
   const search = new URLSearchParams();
   Object.entries(params || {}).forEach(([key, value]) => {
@@ -37,7 +39,7 @@ export default function App() {
 
   const [loginApiUrl, setLoginApiUrl] = useState(apiUrl);
   const [loginOrdersApiUrl, setLoginOrdersApiUrl] = useState(ordersApiUrl);
-  const [loginUsername, setLoginUsername] = useState("");
+  const [loginUsername, setLoginUsername] = useState(adminUser || "admin");
   const [loginPassword, setLoginPassword] = useState("");
 
   const [metrics, setMetrics] = useState({ totalProducts: 0, totalCategories: 0, totalStocksAvailable: 0, lowStockSku: [] });
@@ -93,7 +95,7 @@ export default function App() {
   const [newUserRole, setNewUserRole] = useState("editor");
 
   const api = (path, options = {}) =>
-    fetch(apiUrl + path, {
+    fetch(normalizeBaseUrl(apiUrl) + path, {
       ...options,
       headers: {
         "Content-Type": "application/json",
@@ -118,7 +120,7 @@ export default function App() {
       setLoggedIn(false);
       localStorage.setItem("adminLoggedIn", "false");
       setLockVisible(true);
-      setLoginError("Koneksi gagal. Pastikan `ADMIN_API_KEY` benar.");
+      setLoginError("Koneksi gagal. Cek `ADMIN_API_KEY`, URL API, dan kredensial admin.");
     }
   };
 
@@ -132,7 +134,9 @@ export default function App() {
   const handleLogin = async () => {
     if (!loginApiUrl || !loginUsername || !loginPassword) return;
     try {
-      const res = await fetch(loginApiUrl + "/admin/login", {
+      const baseApi = normalizeBaseUrl(loginApiUrl);
+      const baseOrders = normalizeBaseUrl(loginOrdersApiUrl);
+      const res = await fetch(baseApi + "/admin/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username: loginUsername, password: loginPassword })
@@ -143,13 +147,13 @@ export default function App() {
       if (!res.ok) {
         throw new Error(data.error || data.message || "Login gagal");
       }
-      setApiUrl(loginApiUrl);
-      setOrdersApiUrl(loginOrdersApiUrl);
+      setApiUrl(baseApi);
+      setOrdersApiUrl(baseOrders);
       setAdminKey(data.adminKey || "");
       setAdminRole(data.role || "editor");
       setAdminUser(loginUsername);
-      localStorage.setItem("adminApiUrl", loginApiUrl);
-      localStorage.setItem("ordersApiUrl", loginOrdersApiUrl);
+      localStorage.setItem("adminApiUrl", baseApi);
+      localStorage.setItem("ordersApiUrl", baseOrders);
       localStorage.setItem("adminKey", data.adminKey || "");
       localStorage.setItem("adminRole", data.role || "editor");
       localStorage.setItem("adminUser", loginUsername);
@@ -332,7 +336,7 @@ export default function App() {
         <div className="card w-100" style={{ maxWidth: 480 }}>
           <div className="card-body">
             <h3 className="card-title">Login Admin</h3>
-            <p className="text-secondary">Masukkan API URL, username, dan password.</p>
+            <p className="text-secondary">Gunakan username/password dari `ADMIN_USERNAME` dan `ADMIN_PASSWORD` (lihat `infra/app.env`).</p>
             <div className="row g-3">
               <div className="col-12">
                 <label className="form-label">Admin API URL</label>
@@ -348,7 +352,15 @@ export default function App() {
               </div>
               <div className="col-12">
                 <label className="form-label">Password</label>
-                <input type="password" className="form-control" value={loginPassword} onChange={(e) => setLoginPassword(e.target.value)} />
+                <input
+                  type="password"
+                  className="form-control"
+                  value={loginPassword}
+                  onChange={(e) => setLoginPassword(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") handleLogin();
+                  }}
+                />
               </div>
               <div className="col-12">
                 <button className="btn btn-primary w-100" onClick={handleLogin}>Login</button>

@@ -2,9 +2,9 @@ import Link from "next/link";
 
 const bentoItems = [
   { title: "Akun Premium", desc: "Netflix, Spotify, Canva", href: "/premium", color: "bg-[#FFE8C7] dark:bg-[#2a1f0e]" },
-  { title: "Game Top Up", desc: "MLBB, FF, Valorant", href: "/ppob", color: "bg-[#E4F4FF] dark:bg-[#0f1f2a]" },
-  { title: "Voucher", desc: "Voucher game & hiburan", href: "/ppob", color: "bg-[#EDE6FF] dark:bg-[#19132a]" },
-  { title: "Pulsa/Data", desc: "Semua operator", href: "/ppob", color: "bg-[#E8FBE9] dark:bg-[#0f2414]" },
+  { title: "Game Top Up", desc: "MLBB, FF, Valorant", href: "/ppob/go/game", color: "bg-[#E4F4FF] dark:bg-[#0f1f2a]" },
+  { title: "Voucher", desc: "Voucher game & hiburan", href: "/ppob/go/voucher", color: "bg-[#EDE6FF] dark:bg-[#19132a]" },
+  { title: "Pulsa/Data", desc: "Semua operator", href: "/ppob/go/pulsa", color: "bg-[#E8FBE9] dark:bg-[#0f2414]" },
 ];
 
 export default function BentoGrid() {

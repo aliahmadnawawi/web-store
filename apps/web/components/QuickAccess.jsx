@@ -4,7 +4,7 @@ import Link from "next/link";
 const items = [
   { label: "Premium", href: "/premium", Icon: IconStar },
   { label: "Kategori", href: "/categories", Icon: IconGrid },
-  { label: "AI Chat", href: "/chat", Icon: IconSparkles },
+  { label: "Cara Penggunaan", href: "/how-to-use", Icon: IconSparkles },
   { label: "History", href: "/history", Icon: IconHistory },
   { label: "Profile", href: "/profile", Icon: IconUser },
   { label: "Privasi", href: "/privacy-policy", Icon: IconShield },

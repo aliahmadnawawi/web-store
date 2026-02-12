@@ -53,11 +53,14 @@ export default function ProfilePage() {
           <Link href="/premium" className="rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-ink dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100">
             Belanja Premium
           </Link>
-          <Link href="/ppob" className="rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-ink dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100">
-            PPOB
-          </Link>
           <Link href="/categories" className="rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-ink dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100">
             Kategori
+          </Link>
+          <Link href="/privacy-policy" className="rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-ink dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100">
+            Kebijakan Privasi
+          </Link>
+          <Link href="/terms-of-service" className="rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-ink dark:border-slate-800 dark:bg-slate-950 dark:text-slate-100">
+            Ketentuan Layanan
           </Link>
         </div>
       </div>

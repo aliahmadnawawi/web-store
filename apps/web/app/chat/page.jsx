@@ -11,29 +11,32 @@ const fallbackAnswer = (text) => {
   if (q.includes("qris")) {
     return "Pilih metode QRIS saat checkout. Di halaman invoice, akan muncul QR untuk dibayar via aplikasi e-wallet/banking yang mendukung QRIS.";
   }
-  if (q.includes("ppob") || q.includes("pulsa") || q.includes("data") || q.includes("pln") || q.includes("token") || q.includes("game")) {
-    return "Masuk menu PPOB, pilih kategori (Pulsa/Data/PLN/Game/Voucher), isi nomor/ID pelanggan dulu, lalu pilih nominal dan checkout.";
-  }
   if (q.includes("invoice") || q.includes("status")) {
     return "Kalau kamu checkout sebagai guest, kamu bisa lacak invoice di beranda (fitur Lacak Pesanan). Kalau member, buka menu History.";
   }
-  return "Aku bisa bantu: cara bayar, QRIS, PPOB, status invoice, dan alur pembelian. Tulis pertanyaanmu ya.";
+  if (q.includes("privasi") || q.includes("kebijakan privasi")) {
+    return "Kebijakan privasi tersedia di halaman Kebijakan Privasi. Di sana dijelaskan data yang dikumpulkan, penggunaan data, dan keamanan data.";
+  }
+  if (q.includes("ketentuan") || q.includes("syarat")) {
+    return "Ketentuan layanan tersedia di halaman Ketentuan Layanan. Di sana dijelaskan aturan penggunaan, pembayaran, refund, dan batas tanggung jawab.";
+  }
+  return "Aku bisa bantu: cara bayar, QRIS, status invoice, kebijakan privasi, dan ketentuan layanan. Tulis pertanyaanmu ya.";
 };
 
 export default function AiChatPage() {
   const wa = process.env.NEXT_PUBLIC_CS_WHATSAPP || "https://wa.me/628985228448";
 
   const [messages, setMessages] = useState([
-    { role: "assistant", text: "Halo, aku AI Assistant Sebelas. Mau tanya soal cara bayar, PPOB, atau status invoice?" },
+    { role: "assistant", text: "Halo, aku AI Assistant Sebelas. Mau tanya soal cara bayar, status invoice, atau kebijakan layanan?" },
   ]);
   const [text, setText] = useState("");
   const [loading, setLoading] = useState(false);
 
   const quick = useMemo(() => ([
     "Cara bayar VA / QRIS",
-    "Cara top up game",
-    "Cara beli pulsa",
     "Cek status invoice",
+    "Kebijakan privasi",
+    "Ketentuan layanan",
   ]), []);
 
   const send = async (preset) => {
@@ -152,4 +155,3 @@ export default function AiChatPage() {
     </div>
   );
 }
-

@@ -1,15 +1,14 @@
-import { IconBolt, IconGamepad, IconGrid, IconPhone, IconStar, IconTicket, IconWifi } from "@/components/Icons";
+import { IconFileText, IconGrid, IconHistory, IconShield, IconSparkles, IconStar, IconUser } from "@/components/Icons";
 import Link from "next/link";
 
 const items = [
   { label: "Premium", href: "/premium", Icon: IconStar },
-  { label: "Pulsa", href: "/ppob/go/pulsa", Icon: IconPhone },
-  { label: "Data", href: "/ppob/go/data", Icon: IconWifi },
-  { label: "PLN", href: "/ppob/go/pln", Icon: IconBolt },
-  { label: "Game", href: "/ppob/go/game", Icon: IconGamepad },
-  { label: "WiFi", href: "/ppob/go/wifi", Icon: IconWifi },
-  { label: "Voucher", href: "/ppob/go/voucher", Icon: IconTicket },
   { label: "Kategori", href: "/categories", Icon: IconGrid },
+  { label: "AI Chat", href: "/chat", Icon: IconSparkles },
+  { label: "History", href: "/history", Icon: IconHistory },
+  { label: "Profile", href: "/profile", Icon: IconUser },
+  { label: "Privasi", href: "/privacy-policy", Icon: IconShield },
+  { label: "Ketentuan", href: "/terms-of-service", Icon: IconFileText },
 ];
 
 export default function QuickAccess() {

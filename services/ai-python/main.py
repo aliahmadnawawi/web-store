@@ -36,17 +36,19 @@ async def fraud(payload: FraudRequest):
 async def assistant(payload: AssistantRequest):
     q = (payload.message or "").strip().lower()
     if not q:
-        return {"answer": "Tulis pertanyaanmu ya. Aku bisa bantu: cara bayar, QRIS, PPOB, status invoice."}
+        return {"answer": "Tulis pertanyaanmu ya. Aku bisa bantu: cara bayar, QRIS, status invoice, kebijakan privasi, dan ketentuan layanan."}
 
     if "qris" in q:
         return {"answer": "Pilih metode QRIS saat checkout. Di halaman invoice akan muncul QR untuk discan via aplikasi e-wallet/banking yang mendukung QRIS."}
     if "cara bayar" in q or "bayar" in q:
         return {"answer": "Buka halaman invoice, lalu ikuti instruksi pembayaran (VA/QRIS). Setelah bayar, tekan Refresh Status sampai status berubah menjadi PAID."}
-    if "ppob" in q or "pulsa" in q or "paket data" in q or "data" in q or "pln" in q or "token" in q or "game" in q:
-        return {"answer": "Masuk menu PPOB, pilih kategori (Pulsa/Data/PLN/Game/Voucher), isi nomor/ID pelanggan dulu, lalu pilih nominal dan checkout."}
     if "invoice" in q or "status" in q or "lacak" in q:
         return {"answer": "Kalau kamu checkout sebagai guest, kamu bisa lacak invoice di beranda (fitur Lacak Pesanan). Kalau member, buka menu History."}
+    if "privasi" in q or "kebijakan privasi" in q:
+        return {"answer": "Kebijakan privasi tersedia di halaman Kebijakan Privasi. Di sana dijelaskan data yang dikumpulkan, penggunaan data, dan keamanan data."}
+    if "ketentuan" in q or "syarat" in q:
+        return {"answer": "Ketentuan layanan tersedia di halaman Ketentuan Layanan. Di sana dijelaskan aturan penggunaan, pembayaran, refund, dan batas tanggung jawab."}
     if "refund" in q or "batal" in q:
         return {"answer": "Untuk refund/pembatalan, hubungi CS via WhatsApp dan sertakan nomor invoice."}
 
-    return {"answer": "Aku bisa bantu: cara bayar, QRIS, PPOB, status invoice, dan alur pembelian. Tulis pertanyaan lebih spesifik ya."}
+    return {"answer": "Aku bisa bantu: cara bayar, QRIS, status invoice, kebijakan privasi, dan ketentuan layanan. Tulis pertanyaan lebih spesifik ya."}

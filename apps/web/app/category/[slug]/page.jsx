@@ -33,8 +33,8 @@ export async function generateMetadata({ params }) {
 
 export default async function CategorySlugPage({ params }) {
   const slug = params.slug;
-  if (slug === "game-topup") redirect("/ppob/go/game");
-  if (slug === "e-voucher") redirect("/ppob/go/voucher");
+  if (slug === "game-topup") redirect("/");
+  if (slug === "e-voucher") redirect("/");
   const categories = await getCategories();
   const cat = categories.find((c) => c.slug === slug);
   const products = cat?.id ? await getProducts(cat.id) : [];

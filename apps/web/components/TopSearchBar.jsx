@@ -19,8 +19,11 @@ export default function TopSearchBar({ onOpenCategories }) {
           <button onClick={onOpenCategories} className="hover:text-brand">
             Kategori
           </button>
-          <a className="hover:text-brand" href="#promo">
-            Promo
+          <a className="hover:text-brand" href="/privacy-policy">
+            Kebijakan Privasi
+          </a>
+          <a className="hover:text-brand" href="/terms-of-service">
+            Ketentuan Layanan
           </a>
         </nav>
         <div className="flex-1">
@@ -33,7 +36,7 @@ export default function TopSearchBar({ onOpenCategories }) {
             <input
               name="q"
               className="w-full bg-transparent outline-none placeholder:text-slate-400"
-              placeholder="Cari Netflix, Spotify, Canva, Pulsa..."
+              placeholder="Cari Netflix, Spotify, Canva, Adobe..."
             />
           </form>
         </div>
